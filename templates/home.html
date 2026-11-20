@@ -18,16 +18,28 @@
     </div>
     <div>
       {% if user.is_authenticated %}
-        <a href="{% url 'logout' %}" class="btn btn-on-gradient" aria-label="Sign out">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-            <polyline points="16 17 21 12 16 7"></polyline>
-            <line x1="21" y1="12" x2="9" y2="12"></line>
-          </svg>
-          <span class="btn-label">Sign Out</span>
-        </a>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="{% url 'profile' %}" class="btn btn-solid-on-gradient" aria-label="Manage profile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="btn-label">Manage Profile</span>
+          </a>
+          <a href="{% url 'logout' %}" class="btn btn-on-gradient" aria-label="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span class="btn-label">Sign Out</span>
+          </a>
+        </div>
       {% else %}
-        <a href="{% url 'login' %}" class="btn btn-solid-on-gradient">Sign In Now</a>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <a href="{% url 'register' %}" class="btn btn-solid-on-gradient">Create Account</a>
+          <a href="{% url 'login' %}" class="btn btn-on-gradient">Sign In</a>
+        </div>
       {% endif %}
     </div>
   </section>
@@ -72,13 +84,21 @@
             <span class="info-value">{{ user.last_login|date:"M d, Y H:i"|default:"First session" }}</span>
           </div>
         </div>
+        <div style="margin-top: 1.25rem;">
+          <a href="{% url 'profile' %}" class="btn btn-secondary btn-block">Edit Profile Details</a>
+        </div>
       {% else %}
         <p class="u-text-secondary">
           You are currently browsing as a guest. Sign in to access your saved cart, personalized recommendations, and orders.
         </p>
-        <a href="{% url 'login' %}" class="btn btn-primary btn-block">
-          Sign In with Username or Email
-        </a>
+        <div style="display: flex; flex-direction: column; gap: 0.625rem;">
+          <a href="{% url 'login' %}" class="btn btn-primary btn-block">
+            Sign In with Username or Email
+          </a>
+          <a href="{% url 'register' %}" class="btn btn-secondary btn-block">
+            Create an Account
+          </a>
+        </div>
       {% endif %}
     </div>
 

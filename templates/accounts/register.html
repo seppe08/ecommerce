@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Account — AuraStore{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-container">
+    
+    <!-- Left Showcase Column (Desktop / Tablet) -->
+    <div class="auth-showcase">
+      <div class="showcase-header">
+        <div class="showcase-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Exclusive Member Perks
+        </div>
+        <h1 class="showcase-title">Join AuraStore today.</h1>
+        <p class="showcase-desc">Experience a streamlined shopping sanctuary with member pricing, expedited delivery, and effortless order tracking.</p>
+      </div>
+
+      <div class="showcase-features">
+        <div class="feature-item">
+          <div class="feature-check">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span>Curated collections tailored to your lifestyle</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-check">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span>Real-time parcel tracking and effortless returns</span>
+        </div>
+        <div class="feature-item">
+          <div class="feature-check">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <span>Strict privacy standards and bank-grade encryption</span>
+        </div>
+      </div>
+
+      <div class="showcase-quote">
+        <p class="quote-text">"Joining AuraStore was seamless. The personalized curation and delivery speed set a new benchmark."</p>
+        <span class="quote-author">— Digital Commerce Journal, 2026</span>
+      </div>
+    </div>
+
+    <!-- Right Column: Registration Form Section -->
+    <div class="auth-form-section">
+      <div class="auth-header">
+        <h2 class="auth-header-title">Create your account</h2>
+        <p class="auth-header-subtitle">Join thousands of discerning shoppers on AuraStore</p>
+      </div>
+
+      <!-- Non-field Errors Banner -->
+      {% if form.non_field_errors %}
+        <div class="form-alert" role="alert" aria-live="assertive">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <div>
+            {% for error in form.non_field_errors %}
+              <p>{{ error }}</p>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'register' %}" class="auth-form" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        <!-- Username Field -->
+        <div class="form-group {% if form.username.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.username.id_for_label }}" class="form-label">
+              {{ form.username.label }}<span class="required-mark" aria-hidden="true">*</span>
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input 
+              type="text" 
+              name="{{ form.username.html_name }}" 
+              id="{{ form.username.id_for_label }}" 
+              value="{{ form.username.value|default:'' }}"
+              placeholder="e.g. alex99"
+              class="form-control"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              aria-describedby="{% if form.username.errors %}username_error{% else %}username_hint{% endif %}"
+              {% if form.username.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.username.errors %}
+            <div id="username_error" class="field-error" role="alert">
+              {% for error in form.username.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="username_hint" class="field-hint">{{ form.username.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Email Address Field -->
+        <div class="form-group {% if form.email.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.email.id_for_label }}" class="form-label">
+              {{ form.email.label }}<span class="required-mark" aria-hidden="true">*</span>
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <input 
+              type="email" 
+              name="{{ form.email.html_name }}" 
+              id="{{ form.email.id_for_label }}" 
+              value="{{ form.email.value|default:'' }}"
+              placeholder="name@example.com"
+              class="form-control"
+              autocomplete="email"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              aria-describedby="{% if form.email.errors %}email_error{% else %}email_hint{% endif %}"
+              {% if form.email.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.email.errors %}
+            <div id="email_error" class="field-error" role="alert">
+              {% for error in form.email.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="email_hint" class="field-hint">{{ form.email.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-group {% if form.password.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.password.id_for_label }}" class="form-label">
+              {{ form.password.label }}<span class="required-mark" aria-hidden="true">*</span>
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input 
+              type="password" 
+              name="{{ form.password.html_name }}" 
+              id="{{ form.password.id_for_label }}"
+              placeholder="Create a strong password"
+              class="form-control has-trailing-btn"
+              autocomplete="new-password"
+              required
+              aria-describedby="{% if form.password.errors %}password_error{% else %}password_hint{% endif %}"
+              {% if form.password.errors %}aria-invalid="true"{% endif %}
+            >
+            <button 
+              type="button" 
+              class="password-toggle-btn" 
+              data-target="{{ form.password.id_for_label }}"
+              aria-label="Show password"
+              aria-pressed="false"
+              title="Show password"
+            >
+              <svg class="icon-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="icon-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+              </svg>
+            </button>
+          </div>
+          {% if form.password.errors %}
+            <div id="password_error" class="field-error" role="alert">
+              {% for error in form.password.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="password_hint" class="field-hint">{{ form.password.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="form-group form-group-last {% if form.password_confirm.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.password_confirm.id_for_label }}" class="form-label">
+              {{ form.password_confirm.label }}<span class="required-mark" aria-hidden="true">*</span>
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <input 
+              type="password" 
+              name="{{ form.password_confirm.html_name }}" 
+              id="{{ form.password_confirm.id_for_label }}"
+              placeholder="Re-enter your password"
+              class="form-control has-trailing-btn"
+              autocomplete="new-password"
+              required
+              aria-describedby="{% if form.password_confirm.errors %}password_confirm_error{% else %}password_confirm_hint{% endif %}"
+              {% if form.password_confirm.errors %}aria-invalid="true"{% endif %}
+            >
+            <button 
+              type="button" 
+              class="password-toggle-btn" 
+              data-target="{{ form.password_confirm.id_for_label }}"
+              aria-label="Show password confirmation"
+              aria-pressed="false"
+              title="Show password confirmation"
+            >
+              <svg class="icon-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="icon-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
+                <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
+                <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
+                <line x1="2" y1="2" x2="22" y2="22"></line>
+              </svg>
+            </button>
+          </div>
+          {% if form.password_confirm.errors %}
+            <div id="password_confirm_error" class="field-error" role="alert">
+              {% for error in form.password_confirm.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="password_confirm_hint" class="field-hint">{{ form.password_confirm.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Submit Button with loading spinner state -->
+        <button type="submit" class="btn btn-primary btn-submit" data-loading-text="Creating account...">
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span class="btn-text">Create AuraStore Account</span>
+        </button>
+
+        <div class="auth-footer">
+          <span>Already have an account?</span>
+          <a href="{% url 'login' %}">Sign in</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

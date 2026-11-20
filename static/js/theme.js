@@ -95,7 +95,7 @@
         var submitText = submitBtn.querySelector('.btn-text');
         if (submitText) {
           submitText.setAttribute('data-original-text', submitText.textContent);
-          submitText.textContent = 'Signing in...';
+          submitText.textContent = submitBtn.getAttribute('data-loading-text') || 'Processing...';
         }
 
         // Disable after the current event loop tick so the button's

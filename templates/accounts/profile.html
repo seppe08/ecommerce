@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Profile — AuraStore{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+
+  <!-- Profile Header Card -->
+  <section class="profile-card" aria-label="User overview">
+    <div class="profile-header">
+      <div class="profile-avatar-wrapper">
+        {% if user.profile_picture %}
+          <img src="{{ user.profile_picture.url }}" alt="{{ user.username }}'s avatar" class="profile-avatar-img">
+        {% else %}
+          <span class="profile-avatar-initials" aria-hidden="true">
+            {{ user.first_name|first|default:user.username|first }}
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="profile-header-info">
+        <h1 class="profile-name">{{ user.get_full_name|default:user.username }}</h1>
+        <div class="profile-meta">
+          <span>@{{ user.username }}</span>
+          <span>•</span>
+          <span>{{ user.email }}</span>
+          <span>•</span>
+          <span>Member since {{ user.date_joined|date:"M Y" }}</span>
+          {% if user.is_staff %}
+            <span class="badge badge-primary">Staff</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div>
+        <a href="{% url 'password_reset' %}" class="btn btn-secondary" aria-label="Reset account password">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span class="btn-label">Reset Password</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Profile Edit Form Card -->
+  <section class="profile-card" aria-labelledby="profile-edit-title">
+    <h2 id="profile-edit-title" class="card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+      </svg>
+      Personal Information &amp; Preferences
+    </h2>
+    <p class="u-text-secondary">
+      Update your profile information and contact details. This data is kept private and used solely to fulfill orders and personalize your AuraStore experience.
+    </p>
+
+    <!-- Non-field Errors Banner -->
+    {% if form.non_field_errors %}
+      <div class="form-alert" role="alert" aria-live="assertive">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <div>
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'profile' %}" enctype="multipart/form-data" class="auth-form" novalidate>
+      {% csrf_token %}
+
+      <!-- Name Row: First Name & Last Name -->
+      <div class="form-grid-2">
+        <div class="form-group {% if form.first_name.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.first_name.id_for_label }}" class="form-label">
+              {{ form.first_name.label }}
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input 
+              type="text" 
+              name="{{ form.first_name.html_name }}" 
+              id="{{ form.first_name.id_for_label }}" 
+              value="{{ form.first_name.value|default:'' }}"
+              placeholder="e.g. Jane"
+              class="form-control"
+              autocomplete="given-name"
+              aria-describedby="{% if form.first_name.errors %}first_name_error{% endif %}"
+              {% if form.first_name.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.first_name.errors %}
+            <div id="first_name_error" class="field-error" role="alert">
+              {% for error in form.first_name.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="form-group {% if form.last_name.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.last_name.id_for_label }}" class="form-label">
+              {{ form.last_name.label }}
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <input 
+              type="text" 
+              name="{{ form.last_name.html_name }}" 
+              id="{{ form.last_name.id_for_label }}" 
+              value="{{ form.last_name.value|default:'' }}"
+              placeholder="e.g. Doe"
+              class="form-control"
+              autocomplete="family-name"
+              aria-describedby="{% if form.last_name.errors %}last_name_error{% endif %}"
+              {% if form.last_name.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.last_name.errors %}
+            <div id="last_name_error" class="field-error" role="alert">
+              {% for error in form.last_name.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Contact Row: Phone & Birth Date -->
+      <div class="form-grid-2">
+        <div class="form-group {% if form.phone.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.phone.id_for_label }}" class="form-label">
+              {{ form.phone.label }}
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <input 
+              type="tel" 
+              name="{{ form.phone.html_name }}" 
+              id="{{ form.phone.id_for_label }}" 
+              value="{{ form.phone.value|default:'' }}"
+              placeholder="+1-555-234-5678"
+              class="form-control"
+              autocomplete="tel"
+              aria-describedby="{% if form.phone.errors %}phone_error{% else %}phone_hint{% endif %}"
+              {% if form.phone.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.phone.errors %}
+            <div id="phone_error" class="field-error" role="alert">
+              {% for error in form.phone.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="phone_hint" class="field-hint">{{ form.phone.help_text }}</p>
+          {% endif %}
+        </div>
+
+        <div class="form-group {% if form.birth_date.errors %}has-error{% endif %}">
+          <div class="form-label-row">
+            <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+              {{ form.birth_date.label }}
+            </label>
+          </div>
+          <div class="input-container">
+            <svg class="input-leading-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <input 
+              type="date" 
+              name="{{ form.birth_date.html_name }}" 
+              id="{{ form.birth_date.id_for_label }}" 
+              value="{{ form.birth_date.value|date:'Y-m-d'|default:'' }}"
+              class="form-control"
+              aria-describedby="{% if form.birth_date.errors %}birth_date_error{% else %}birth_date_hint{% endif %}"
+              {% if form.birth_date.errors %}aria-invalid="true"{% endif %}
+            >
+          </div>
+          {% if form.birth_date.errors %}
+            <div id="birth_date_error" class="field-error" role="alert">
+              {% for error in form.birth_date.errors %}
+                <p class="field-error-message">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                  </svg>
+                  <span>{{ error }}</span>
+                </p>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p id="birth_date_hint" class="field-hint">{{ form.birth_date.help_text }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Avatar Upload Field -->
+      <div class="form-group {% if form.profile_picture.errors %}has-error{% endif %}">
+        <div class="form-label-row">
+          <label for="{{ form.profile_picture.id_for_label }}" class="form-label">
+            {{ form.profile_picture.label }}
+          </label>
+        </div>
+        <div class="input-container">
+          <input 
+            type="file" 
+            name="{{ form.profile_picture.html_name }}" 
+            id="{{ form.profile_picture.id_for_label }}" 
+            class="form-control"
+            accept="image/*"
+            aria-describedby="{% if form.profile_picture.errors %}profile_picture_error{% else %}profile_picture_hint{% endif %}"
+            {% if form.profile_picture.errors %}aria-invalid="true"{% endif %}
+          >
+        </div>
+        {% if form.profile_picture.errors %}
+          <div id="profile_picture_error" class="field-error" role="alert">
+            {% for error in form.profile_picture.errors %}
+              <p class="field-error-message">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{ error }}</span>
+              </p>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p id="profile_picture_hint" class="field-hint">{{ form.profile_picture.help_text }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Account Credentials Info Row (Read Only) -->
+      <div class="u-stack-sm" style="margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-md); background-color: var(--bg-subtle);">
+        <div class="spec-row">
+          <span class="u-label u-text-secondary">Username (ID)</span>
+          <span class="spec-value">{{ user.username }}</span>
+        </div>
+        <div class="spec-row">
+          <span class="u-label u-text-secondary">Email Address</span>
+          <span class="spec-value">{{ user.email }}</span>
+        </div>
+        <p class="field-hint" style="margin-top: 0.5rem;">To change your registered username or primary email address, please contact customer support.</p>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <a href="{% url 'home' %}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary btn-submit" data-loading-text="Saving changes...">
+          <span class="btn-spinner" aria-hidden="true"></span>
+          <span class="btn-text">Save Changes</span>
+        </button>
+      </div>
+    </form>
+  </section>
+
+</div>
+{% endblock %}

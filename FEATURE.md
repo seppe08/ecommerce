@@ -177,20 +177,102 @@ Whenever a feature, module, or enhancement is successfully implemented:
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
-  - 12 comprehensive unit and integration tests covering:
-    - Login page rendering & accessibility elements.
-    - Successful login with username.
-    - Successful login with email.
-    - Case-insensitive credential matching for both username and email.
-    - Invalid password handling and granular error messaging.
-    - Non-existent account feedback.
-    - Deactivated / inactive account blocking.
-    - Required field validation errors.
-    - "Remember me" 30-day session expiry vs browser-close session expiry.
-    - Open-redirect attack mitigation.
-    - Authenticated user redirection from login page.
-    - Logout flow and session cleanup.
-  - 100% pass rate verified via `python manage.py test apps.accounts`.
+  - Initial 12 comprehensive unit and integration tests covering authentication, login, session persistence, and security controls.
+- **Key Files:**
+  - `apps/accounts/tests.py`
+
+---
+
+### 12. User Registration & Account Creation Flow
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Implemented `CustomRegistrationForm` (`forms.ModelForm`) with:
+    - Case-insensitive unique username and unique email validation.
+    - Password confirmation matching and enforcement of Django's `validate_password` password validators.
+    - Accessible styling conforming to `DESIGN_SYSTEM.md` with input icons, clear help text, and anchored field error alerts.
+  - Implemented `RegisterView(View)`:
+    - Renders split-screen showcase registration layout.
+    - Automatically signs new users in upon successful registration with personalized welcome banner.
+    - Open-redirect mitigation on post-registration `next` destination.
+    - Redirects already-authenticated users to home dashboard.
+  - Implemented `templates/accounts/register.html` matching `DESIGN_SYSTEM.md`:
+    - Responsive split-screen desktop/tablet showcase column with member benefit highlights and quote.
+    - Accessible password visibility toggles (`data-target`) for both password and password-confirmation inputs.
+    - Zero-FOUC architecture inheriting synchronous theme detection from `base.html`.
+- **Key Files:**
+  - `apps/accounts/forms.py`
+  - `apps/accounts/views.py`
+  - `apps/accounts/urls.py`
+  - `templates/accounts/register.html`
+  - `templates/base.html`
+  - `templates/accounts/login.html`
+
+---
+
+### 13. User Profile Management & Avatar Uploads
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Implemented `UserProfileForm` (`forms.ModelForm` for `CustomUser`):
+    - Profile fields: `first_name`, `last_name`, `phone`, `birth_date`, and `profile_picture` avatar upload.
+    - Phone number character and format validation with maximum 15-character constraint.
+    - Clean date widget and file input formatting with image format guidance.
+  - Implemented `ProfileView(LoginRequiredMixin, View)`:
+    - Secure endpoint requiring authentication (`login_url="login"`).
+    - Multipart form processing (`request.FILES`) for avatar uploads.
+    - Instant user feedback via Django messages framework upon successful profile updates.
+  - Implemented `templates/accounts/profile.html`:
+    - Profile header card featuring round avatar display with fallback user initials badge.
+    - Form card with responsive 2-column layout for name and contact info.
+    - Non-editable display of registered Username ID and Email address.
+    - Direct link to password reset workflow.
+- **Key Files:**
+  - `apps/accounts/forms.py`
+  - `apps/accounts/views.py`
+  - `apps/accounts/urls.py`
+  - `templates/accounts/profile.html`
+  - `static/css/theme.css`
+  - `templates/base.html`
+
+---
+
+### 14. Password Reset & Recovery Workflow
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - End-to-end 4-step secure password recovery workflow using Django auth view architecture:
+    - `CustomPasswordResetView` (`/password-reset/`, name=`password_reset`): Initiates reset request via email with case-insensitive user lookup.
+    - `CustomPasswordResetDoneView` (`/password-reset/done/`, name=`password_reset_done`): Confirmation notification screen with delivery guidance.
+    - `CustomPasswordResetConfirmView` (`/reset/<uidb64>/<token>/`, name=`password_reset_confirm`): Secure token verification with new password inputs and visibility toggles; graceful handling of invalid/expired tokens.
+    - `CustomPasswordResetCompleteView` (`/reset/done/`, name=`password_reset_complete`): Final celebration and prompt to sign in with new credentials.
+  - Dedicated forms: `CustomPasswordResetForm` and `CustomSetPasswordForm` with full `DESIGN_SYSTEM.md` token integration.
+  - Configured console email backend default (`EMAIL_BACKEND`) for dev/test environments.
+  - Clean email notification templates: `password_reset_email.html` and `password_reset_subject.txt`.
+- **Key Files:**
+  - `apps/accounts/views.py`
+  - `apps/accounts/forms.py`
+  - `apps/accounts/urls.py`
+  - `core/settings.py`
+  - `templates/accounts/password_reset_form.html`
+  - `templates/accounts/password_reset_done.html`
+  - `templates/accounts/password_reset_confirm.html`
+  - `templates/accounts/password_reset_complete.html`
+  - `templates/accounts/password_reset_email.html`
+  - `templates/accounts/password_reset_subject.txt`
+
+---
+
+### 15. Comprehensive 30-Test Automated Suite (100% Pass Rate)
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Expanded test suite from 12 to 30 unit and integration tests across 4 test classes:
+    - `AuthenticationAndLoginTests` (12 tests): Login, case-insensitivity, remember-me session persistence, open-redirect defenses, logout.
+    - `UserRegistrationTests` (7 tests): Page rendering, authenticated user redirect, successful registration, duplicate email rejection, duplicate username rejection, password mismatch error, weak password policy rejection.
+    - `UserProfileManagementTests` (5 tests): Unauthenticated redirect, profile view rendering, successful field updates, invalid phone validation, avatar image upload with `SimpleUploadedFile`.
+    - `PasswordResetWorkflowTests` (6 tests): Reset form rendering, email dispatch verification, done page rendering, token confirmation & password update verification, invalid/expired token handling, complete page rendering.
+  - 100% pass rate verified via `uv run python manage.py test apps.accounts`.
 - **Key Files:**
   - `apps/accounts/tests.py`
 
@@ -198,9 +280,9 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ## 🔮 Planned / Upcoming Features
 
-- [ ] **User Registration / Sign Up Flow:** Form with password strength indicator and unique email verification.
-- [ ] **Password Reset / Recovery Flow:** Email-based token recovery workflow.
-- [ ] **User Profile Management:** Edit personal info, upload avatar image, update phone number.
+- [x] **User Registration / Sign Up Flow:** Form with password validation and unique email verification.
+- [x] **Password Reset / Recovery Flow:** Email-based token recovery workflow.
+- [x] **User Profile Management:** Edit personal info, upload avatar image, update phone number.
 - [ ] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering.
 - [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
 - [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
