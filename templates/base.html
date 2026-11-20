@@ -50,6 +50,11 @@
         <span class="brand-title">AuraStore</span>
       </a>
 
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+        <a href="{% url 'catalog:product_list' %}" class="nav-link {% if 'catalog' in request.resolver_match.app_names or 'catalog' in request.resolver_match.namespaces %}active{% endif %}">Products</a>
+      </nav>
+
       <div class="header-actions">
         <!-- Dark / Light Mode Switcher -->
         <button type="button" class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme">

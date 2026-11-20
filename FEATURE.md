@@ -196,11 +196,54 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
+### 12. Product Catalog, Categories & Gallery System
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Data Models:**
+    - `Category`: Categorization hierarchy with `name`, `slug` (unique), `description`, optional `image`, and `is_active` toggle.
+    - `Product`: Comprehensive product entity with `category` foreign key, `name`, `slug` (unique), `description`, `price`, `sku` (unique), `stock`, `is_active`, `featured`, `created_at`, and `updated_at`. Optimized with database indexes on `slug`, `sku`, and `-created_at`.
+    - `ProductImage`: Multi-image support for each product with `image` upload, `alt_text`, and `is_primary` flag.
+  - **Business Logic & Properties:**
+    - `Product.is_in_stock`: Dynamic boolean property checking inventory availability (`stock > 0`).
+    - `Product.primary_image`: Intelligent image lookup returning designated primary image or first available gallery image with graceful fallback.
+  - **Django Admin Interface:**
+    - `CategoryAdmin`: List display with dynamic annotated product count, filter by active status, search by name/slug/description, and auto-populated slug.
+    - `ProductAdmin`: Inline image editing with `ProductImageInline` (tabular), list display with price, stock, active and featured status, date hierarchy, search, and list-editable fields.
+    - `ProductImageAdmin`: Media asset management with primary image filtering and product search.
+  - **Views & Controller Flow:**
+    - `ProductListView` (`/products/`): Dual category filtering (via dedicated URL path `/products/category/<slug>/` or `?category=<slug>`), full-text search across title, description, and SKU (`?q=`), sorting (newest, price ascending/descending, name A-Z), featured filter, active category chips with live count badges, and pagination (12 items per page).
+    - `ProductDetailView` (`/products/<slug>/`): Dedicated product showcase featuring interactive thumbnail image switcher, stock badge, pricing, SKU and category metadata, full description, quantity selector, "Add to Cart" action, and related products grid.
+  - **Design System & Accessibility (WCAG 2.1 AA):**
+    - Semantic HTML with `<nav aria-label="Breadcrumb">`, `<form role="search">`, and distinct headings.
+    - All interactive controls (filter chips, sort dropdown, search inputs, pagination links, thumbnail selectors) strictly satisfy minimum touch targets of ≥ 44×44px.
+    - Flawless rendering in both Light and Dark modes with smooth transitions and glowing `:focus-visible` rings.
+    - Zero Flash of Unstyled Content (FOUC).
+  - **Automated Test Coverage:**
+    - 23 unit and integration tests in `apps/catalog/tests.py` verifying model constraints, property methods, admin configurations, list filtering, keyword searching, sorting, pagination, detail view rendering, related products, 404 error boundaries, and uniqueness integrity.
+- **Key Files:**
+  - `apps/catalog/apps.py`
+  - `apps/catalog/models.py`
+  - `apps/catalog/admin.py`
+  - `apps/catalog/views.py`
+  - `apps/catalog/urls.py`
+  - `apps/catalog/tests.py`
+  - `apps/catalog/migrations/0001_initial.py`
+  - `templates/catalog/product_list.html`
+  - `templates/catalog/product_detail.html`
+  - `core/settings.py`
+  - `core/urls.py`
+  - `static/css/theme.css`
+  - `templates/base.html`
+  - `templates/home.html`
+
+---
+
 ## 🔮 Planned / Upcoming Features
 
 - [ ] **User Registration / Sign Up Flow:** Form with password strength indicator and unique email verification.
 - [ ] **Password Reset / Recovery Flow:** Email-based token recovery workflow.
 - [ ] **User Profile Management:** Edit personal info, upload avatar image, update phone number.
-- [ ] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering.
+- [x] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering. (Completed)
 - [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
 - [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).

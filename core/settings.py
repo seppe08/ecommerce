@@ -8,7 +8,7 @@ env = environ.Env()
 
 environ.Env.read_env(BASE_DIR / '.env')
 
-SECRET_KEY = env("SECRET_KEY")
+SECRET_KEY = env("SECRET_KEY", default="django-insecure-aura-store-dev-secret-key-change-in-prod")
 
 DEBUG = env.bool("DEBUG", default=False)
 
@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.accounts',
+    'apps.catalog',
 ]
 
 MIDDLEWARE = [

@@ -16,7 +16,8 @@
         <p>A finely crafted platform engineered with high performance, accessibility, and elegance.</p>
       {% endif %}
     </div>
-    <div>
+    <div class="hero-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <a href="{% url 'catalog:product_list' %}" class="btn btn-solid-on-gradient">Browse Catalog</a>
       {% if user.is_authenticated %}
         <a href="{% url 'logout' %}" class="btn btn-on-gradient" aria-label="Sign out">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -27,7 +28,7 @@
           <span class="btn-label">Sign Out</span>
         </a>
       {% else %}
-        <a href="{% url 'login' %}" class="btn btn-solid-on-gradient">Sign In Now</a>
+        <a href="{% url 'login' %}" class="btn btn-on-gradient">Sign In</a>
       {% endif %}
     </div>
   </section>

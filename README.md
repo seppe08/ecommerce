@@ -6,13 +6,15 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 
 ## 🌟 Key Highlights
 
+- **Product Catalog & Category Exploration:** Browse comprehensive product offerings with real-time category filtering, SKU and keyword search, sorting (price, newest, name), and stock status indicators.
+- **Rich Multi-Image Gallery Showcase:** Interactive product detail views with multi-image thumbnail galleries, specification grids, quantity selection, and related product recommendations.
 - **Dual-Identifier Authentication:** Log in seamlessly using either your unique **Username** or verified **Email** address (case-insensitive).
 - **Zero-FOUC Dark & Light Modes:** Synchronous theme resolution in `<head>` prevents any flash of unstyled color; persists preferences via `localStorage` with OS-level fallback.
 - **Enterprise-Grade Security:** Timing attack resistance, open-redirect mitigation, granular error handling without credential leaking, and safe session expiration handling.
 - **Session Flexibility:** 30-day persistent session support via "Remember Me", or secure browser-close expiry.
 - **High-Empathy UI/UX:** Inline field-anchored errors, live loading spinner states on submission to prevent double clicks, and accessible password visibility toggles.
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
-- **100% Automated Test Suite:** Unit and integration tests covering the complete authentication and security lifecycle.
+- **100% Automated Test Suite:** 35 unit and integration tests covering authentication, catalog models, admin, filtering, searching, and security.
 
 ---
 
@@ -36,16 +38,24 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 ```text
 ecommerce/
 ├── apps/
-│   └── accounts/               # Custom user management & authentication app
-│       ├── migrations/         # Database migration files
-│       ├── admin.py            # CustomUser admin configuration
-│       ├── apps.py             # App configuration
-│       ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
-│       ├── forms.py            # CustomLoginForm with granular validation
-│       ├── models.py           # CustomUser model (AbstractUser)
-│       ├── tests.py            # Comprehensive 12-case test suite
-│       ├── urls.py             # App URL patterns (login, logout, home)
-│       └── views.py            # CustomLoginView, CustomLogoutView, HomeView
+│   ├── accounts/               # Custom user management & authentication app
+│   │   ├── migrations/         # Database migration files
+│   │   ├── admin.py            # CustomUser admin configuration
+│   │   ├── apps.py             # App configuration
+│   │   ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
+│   │   ├── forms.py            # CustomLoginForm with granular validation
+│   │   ├── models.py           # CustomUser model (AbstractUser)
+│   │   ├── tests.py            # Comprehensive 12-case test suite
+│   │   ├── urls.py             # App URL patterns (login, logout, home)
+│   │   └── views.py            # CustomLoginView, CustomLogoutView, HomeView
+│   └── catalog/                # Product catalog & categories app
+│       ├── migrations/         # Category, Product, ProductImage migrations
+│       ├── admin.py            # Admin configs with inlines & product counts
+│       ├── apps.py             # Catalog app configuration
+│       ├── models.py           # Category, Product, ProductImage models
+│       ├── tests.py            # Comprehensive 23-case test suite
+│       ├── urls.py             # Product list, category & detail routes
+│       └── views.py            # ProductListView, ProductDetailView
 ├── core/
 │   ├── asgi.py                 # ASGI configuration
 │   ├── settings.py             # Django project settings & database configuration
@@ -59,6 +69,9 @@ ecommerce/
 ├── templates/
 │   ├── accounts/
 │   │   └── login.html          # Split-screen responsive login template
+│   ├── catalog/
+│   │   ├── product_list.html   # Product catalog with search, filters & pagination
+│   │   └── product_detail.html # Rich product view with gallery & related products
 │   ├── base.html               # Master layout with zero-FOUC theme script & header
 │   └── home.html               # Dashboard & catalog showcase view
 ├── .env.example                # Template for environment configuration
@@ -152,11 +165,17 @@ Visit `http://127.0.0.1:8000/` in your browser.
 ## 🧪 Running Automated Tests & Linting
 
 ### Running Unit & Integration Tests
-Execute the comprehensive test suite in `apps/accounts/tests.py`:
+Execute the comprehensive test suites:
 ```bash
-uv run python manage.py test apps.accounts
+# Test the Product Catalog app (23 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.catalog
+
+# Test the Accounts & Auth app (12 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts
+
+# Run all test suites across the project (35 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts apps.catalog
 ```
-*All 12 authentication, session, and security test cases will execute.*
 
 ### Code Quality & Linter
 Run `Ruff` to verify code standards:
