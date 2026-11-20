@@ -1,128 +1,128 @@
 /**
  * Theme & UI Interactions Script
- * Handles dark/light theme switching with zero FOUC, password visibility toggle,
- * form submission loading indicators, and dismissible alerts.
+ * ------------------------------------------------------------------
+ * Theme tokens live in CSS (DESIGN_SYSTEM.md §2). This script only
+ * toggles the theme attributes/classes and wires up micro-interactions.
+ * The initial theme is applied synchronously in <head> to avoid FOUC.
  */
 
 (function () {
   'use strict';
 
-  // 1. Theme Toggle Engine
-  const THEME_KEY = 'ecommerce_theme_preference';
+  var THEME_KEY = 'ecommerce_theme_preference';
 
   function getPreferredTheme() {
-    const savedTheme = localStorage.getItem(THEME_KEY);
+    var savedTheme = localStorage.getItem(THEME_KEY);
     if (savedTheme) {
       return savedTheme;
     }
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
 
-  function applyTheme(theme) {
-    if (theme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-    }
+  function isDark() {
+    return document.documentElement.getAttribute('data-theme') === 'dark' ||
+      document.documentElement.classList.contains('dark');
+  }
 
-    const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
-    toggleBtns.forEach((btn) => {
-      btn.setAttribute(
-        'aria-label',
-        theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-      );
-      btn.setAttribute('title', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  function applyTheme(theme) {
+    var dark = theme === 'dark';
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.documentElement.classList.toggle('dark', dark);
+
+    var nextLabel = dark ? 'Switch to light mode' : 'Switch to dark mode';
+    document.querySelectorAll('.theme-toggle-btn').forEach(function (btn) {
+      btn.setAttribute('aria-label', nextLabel);
+      btn.setAttribute('title', nextLabel);
+      btn.setAttribute('aria-pressed', String(dark));
     });
   }
 
   function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    var newTheme = isDark() ? 'light' : 'dark';
     localStorage.setItem(THEME_KEY, newTheme);
     applyTheme(newTheme);
   }
 
-  // Listen for system theme changes if user has not set a preference
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (!localStorage.getItem(THEME_KEY)) {
-      applyTheme(e.matches ? 'dark' : 'light');
-    }
-  });
+  function initTheme() {
+    // Re-apply the theme chosen by the blocking <head> script so the
+    // button labels/state stay in sync (and `.dark` classes are set).
+    applyTheme(getPreferredTheme());
 
-  // 2. DOM Ready Initializations
-  document.addEventListener('DOMContentLoaded', () => {
-    // Attach event listeners to all theme toggle buttons
-    const toggleBtns = document.querySelectorAll('.theme-toggle-btn');
-    toggleBtns.forEach((btn) => {
+    var mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    var onSystemChange = function (event) {
+      if (!localStorage.getItem(THEME_KEY)) {
+        applyTheme(event.matches ? 'dark' : 'light');
+      }
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', onSystemChange);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(onSystemChange);
+    }
+
+    document.querySelectorAll('.theme-toggle-btn').forEach(function (btn) {
       btn.addEventListener('click', toggleTheme);
     });
+  }
 
-    // 3. Password Visibility Toggle
-    const passwordToggleButtons = document.querySelectorAll('.password-toggle-btn');
-    passwordToggleButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target') || 'id_password';
-        const passwordInput = document.getElementById(targetId);
+  function initPasswordToggles() {
+    document.querySelectorAll('.password-toggle-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var targetId = btn.getAttribute('data-target') || 'id_password';
+        var passwordInput = document.getElementById(targetId);
         if (!passwordInput) return;
 
-        const isPassword = passwordInput.getAttribute('type') === 'password';
+        var isPassword = passwordInput.getAttribute('type') === 'password';
         passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
-
-        const eyeOpen = btn.querySelector('.icon-eye-open');
-        const eyeClosed = btn.querySelector('.icon-eye-closed');
-
-        if (eyeOpen && eyeClosed) {
-          if (isPassword) {
-            eyeOpen.style.display = 'none';
-            eyeClosed.style.display = 'block';
-            btn.setAttribute('aria-label', 'Hide password');
-            btn.setAttribute('title', 'Hide password');
-          } else {
-            eyeOpen.style.display = 'block';
-            eyeClosed.style.display = 'none';
-            btn.setAttribute('aria-label', 'Show password');
-            btn.setAttribute('title', 'Show password');
-          }
-        }
+        // CSS drives the eye icons from aria-pressed — no inline styles.
+        btn.setAttribute('aria-pressed', String(isPassword));
+        btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        btn.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
       });
     });
+  }
 
-    // 4. Form Submit Loading State
-    const authForms = document.querySelectorAll('form.auth-form');
-    authForms.forEach((form) => {
-      form.addEventListener('submit', function (e) {
-        if (!form.checkValidity()) {
-          return; // Let standard validation fire if required
+  function initFormLoading() {
+    document.querySelectorAll('form.auth-form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        if (!form.checkValidity()) return; // native required validation handles it
+
+        var submitBtn = form.querySelector('.btn-submit');
+        if (!submitBtn || submitBtn.disabled) return;
+
+        form.setAttribute('aria-busy', 'true');
+        submitBtn.classList.add('btn-loading');
+        var submitText = submitBtn.querySelector('.btn-text');
+        if (submitText) {
+          submitText.setAttribute('data-original-text', submitText.textContent);
+          submitText.textContent = 'Signing in...';
         }
-        const submitBtn = form.querySelector('.btn-submit');
-        if (submitBtn && !submitBtn.disabled) {
-          submitBtn.classList.add('btn-loading');
-          const submitText = submitBtn.querySelector('.btn-text');
-          if (submitText) {
-            submitText.setAttribute('data-original-text', submitText.textContent);
-            submitText.textContent = 'Signing in...';
-          }
-          // Note: we do not set submitBtn.disabled = true immediately because
-          // some browsers fail to submit the form button name/value if disabled prematurely.
-          setTimeout(() => {
-            submitBtn.style.pointerEvents = 'none';
-          }, 50);
-        }
+
+        // Disable after the current event loop tick so the button's
+        // name/value (if any) still ships with the request, while
+        // duplicate clicks are blocked immediately afterwards.
+        setTimeout(function () {
+          submitBtn.disabled = true;
+        }, 0);
       });
     });
+  }
 
-    // 5. Alert Dismissal
-    const dismissButtons = document.querySelectorAll('.alert-dismiss');
-    dismissButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const alert = btn.closest('.alert');
-        if (alert) {
-          alert.style.opacity = '0';
-          alert.style.transform = 'translateY(-6px)';
-          alert.style.transition = 'all 0.2s ease-out';
-          setTimeout(() => alert.remove(), 200);
-        }
+  function initAlertDismissal() {
+    document.querySelectorAll('.alert-dismiss').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var alert = btn.closest('.alert');
+        if (!alert) return;
+        alert.classList.add('is-dismissing');
+        window.setTimeout(function () { alert.remove(); }, 220);
       });
     });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initTheme();
+    initPasswordToggles();
+    initFormLoading();
+    initAlertDismissal();
   });
 })();

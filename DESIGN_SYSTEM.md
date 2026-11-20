@@ -39,117 +39,184 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
 ### Color Token Architecture
 
 ```css
-:root {
-  /* Surface & Background */
-  --bg-page: #f8fafc;            /* Slate 50 */
-  --bg-surface: #ffffff;         /* Pure White */
-  --bg-surface-elevated: #ffffff;/* Cards, modals */
-  --bg-subtle: #f1f5f9;          /* Slate 100 */
-  --bg-input: #ffffff;
+   :root {
+   color-scheme: light;
 
-  /* Typography */
-  --text-primary: #0f172a;       /* Slate 900 - high contrast */
-  --text-secondary: #475569;     /* Slate 600 - supporting info */
-  --text-muted: #64748b;         /* Slate 500 - helper copy */
-  --text-inverse: #ffffff;
+   --bg-page: #F7F8FC;
+   --bg-surface: #FFFFFF;
+   --bg-surface-elevated: #FFFFFF;
+   --bg-subtle: #F1F3F9;
+   --bg-input: #FFFFFF;
 
-  /* Brand Accents (Modern Indigo / Violet Luxury) */
-  --primary: #4f46e5;            /* Indigo 600 */
-  --primary-hover: #4338ca;      /* Indigo 700 */
-  --primary-light: #eef2ff;      /* Indigo 50 */
-  --primary-focus: rgba(79, 70, 229, 0.25);
+   --text-primary: #171B2D;
+   --text-secondary: #555D73;
+   --text-muted: #858DA3;
+   --text-inverse: #FFFFFF;
 
-  /* Semantic Feedback */
-  --error: #ef4444;              /* Rose 500 */
-  --error-bg: #fef2f2;           /* Rose 50 */
-  --error-border: #fecaca;       /* Rose 200 */
-  --error-text: #991b1b;         /* Rose 800 */
+   --primary: #635BDB;
+   --primary-hover: #5149C6;
+   --primary-active: #433CAB;
+   --primary-light: #EFEEFF;
+   --primary-focus: rgba(99, 91, 219, 0.22);
 
-  --success: #10b981;            /* Emerald 500 */
-  --success-bg: #ecfdf5;         /* Emerald 50 */
-  --success-border: #a7f3d0;     /* Emerald 200 */
-  --success-text: #065f46;       /* Emerald 800 */
+   --error: #DC525D;
+   --error-bg: #FFF0F1;
+   --error-border: #F5C8CC;
+   --error-text: #A52F3A;
 
-  --warning: #f59e0b;            /* Amber 500 */
-  --warning-bg: #fffbeb;         /* Amber 50 */
-  --warning-border: #fde68a;     /* Amber 200 */
-  --warning-text: #92400e;       /* Amber 800 */
+   --success: #16876A;
+   --success-bg: #EAF8F2;
+   --success-border: #B8E6D3;
+   --success-text: #12664F;
 
-  --info: #0ea5e9;               /* Sky 500 */
-  --info-bg: #f0f9ff;            /* Sky 50 */
-  --info-border: #bae6fd;        /* Sky 200 */
-  --info-text: #075985;          /* Sky 800 */
+   --warning: #B7791F;
+   --warning-bg: #FFF7E8;
+   --warning-border: #F2D9A6;
+   --warning-text: #875512;
 
-  /* Borders & Dividers */
-  --border-subtle: #e2e8f0;      /* Slate 200 */
-  --border-strong: #cbd5e1;      /* Slate 300 */
-  --border-focus: #6366f1;       /* Indigo 500 */
+   --info: #287DB5;
+   --info-bg: #EDF6FD;
+   --info-border: #C4E0F4;
+   --info-text: #205D89;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.10), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+   --border-subtle: #E8EAF1;
+   --border-strong: #D6D9E5;
+   --border-focus: #8179E8;
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-full: 9999px;
-}
+   --shadow-sm: 0 1px 2px rgba(23, 27, 45, 0.04);
+   --shadow-md: 0 4px 12px rgba(23, 27, 45, 0.05);
+   --shadow-lg: 0 10px 28px rgba(23, 27, 45, 0.07);
+   --shadow-xl: 0 20px 45px rgba(23, 27, 45, 0.10);
 
-[data-theme="dark"] {
-  /* Surface & Background (Deep obsidian / slate, never washed-out gray) */
-  --bg-page: #0b0f19;            /* Pitch Slate */
-  --bg-surface: #111827;         /* Gray 900 */
-  --bg-surface-elevated: #1e293b;/* Slate 800 */
-  --bg-subtle: #1e293b;          /* Slate 800 */
-  --bg-input: #0f172a;           /* Deep input slot */
+   --radius-sm: 6px;
+   --radius-md: 10px;
+   --radius-lg: 14px;
+   --radius-xl: 20px;
+   --radius-full: 9999px;
 
-  /* Typography */
-  --text-primary: #f8fafc;       /* Slate 50 */
-  --text-secondary: #cbd5e1;     /* Slate 300 */
-  --text-muted: #94a3b8;         /* Slate 400 */
-  --text-inverse: #0f172a;
+   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
 
-  /* Brand Accents */
-  --primary: #6366f1;            /* Indigo 500 - brighter for dark mode */
-  --primary-hover: #818cf8;      /* Indigo 400 */
-  --primary-light: rgba(99, 102, 241, 0.15);
-  --primary-focus: rgba(99, 102, 241, 0.35);
+   --text-xs: 0.75rem;
+   --text-sm: 0.875rem;
+   --text-base: 1rem;
+   --text-lg: 1.125rem;
+   --text-xl: 1.25rem;
+   --text-2xl: 1.5rem;
 
-  /* Semantic Feedback */
-  --error: #f87171;              /* Rose 400 */
-  --error-bg: rgba(239, 68, 68, 0.12);
-  --error-border: rgba(239, 68, 68, 0.3);
-  --error-text: #fca5a5;
+   --control-height-sm: 2rem;
+   --control-height-md: 2.5rem;
+   --control-height-lg: 3rem;
 
-  --success: #34d399;            /* Emerald 400 */
-  --success-bg: rgba(16, 185, 129, 0.12);
-  --success-border: rgba(16, 185, 129, 0.3);
-  --success-text: #6ee7b7;
 
-  --warning: #fbbf24;            /* Amber 400 */
-  --warning-bg: rgba(245, 158, 11, 0.12);
-  --warning-border: rgba(245, 158, 11, 0.3);
-  --warning-text: #fde68a;
+   --focus-ring: 0 0 0 3px var(--primary-focus);
 
-  --info: #38bdf8;               /* Sky 400 */
-  --info-bg: rgba(14, 165, 233, 0.12);
-  --info-border: rgba(14, 165, 233, 0.3);
-  --info-text: #7dd3fc;
+   --transition-fast: 150ms ease;
+   --transition-normal: 220ms ease;
+   }
 
-  /* Borders & Dividers */
-  --border-subtle: #1e293b;      /* Slate 800 */
-  --border-strong: #334155;      /* Slate 700 */
-  --border-focus: #818cf8;
+   [data-theme="dark"],
+   .dark {
+   color-scheme: dark;
 
-  /* Shadows (Tuned for dark backgrounds) */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.6);
-}
+   --bg-page: #0C0F1A;
+   --bg-surface: #131827;
+   --bg-surface-elevated: #1B2235;
+   --bg-subtle: #222A3F;
+   --bg-input: #101525;
+
+   --text-primary: #F1F3FA;
+   --text-secondary: #B0B8CC;
+   --text-muted: #828DA7;
+   --text-inverse: #111526;
+
+   --primary: #8B83F6;
+   --primary-hover: #A49DFF;
+   --primary-active: #756CE5;
+   --primary-light: rgba(139, 131, 246, 0.13);
+   --primary-focus: rgba(139, 131, 246, 0.30);
+
+   --error: #F17C86;
+   --error-bg: rgba(220, 82, 93, 0.12);
+   --error-border: rgba(241, 124, 134, 0.25);
+   --error-text: #FFB4BA;
+
+   --success: #4BC9A0;
+   --success-bg: rgba(22, 135, 106, 0.13);
+   --success-border: rgba(75, 201, 160, 0.25);
+   --success-text: #8AE5C4;
+
+   --warning: #F0BB61;
+   --warning-bg: rgba(183, 121, 31, 0.13);
+   --warning-border: rgba(240, 187, 97, 0.25);
+   --warning-text: #F8D795;
+
+   --info: #69B8E8;
+   --info-bg: rgba(40, 125, 181, 0.13);
+   --info-border: rgba(105, 184, 232, 0.25);
+   --info-text: #A3D9F6;
+
+   --border-subtle: #252D40;
+   --border-strong: #364159;
+   --border-focus: #A49DFF;
+
+   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.30);
+   --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.35);
+   --shadow-xl: 0 20px 45px rgba(0, 0, 0, 0.45);
+   }
+   
+   *,
+   *::before,
+   *::after {
+   box-sizing: border-box;
+   }
+
+   html {
+   font-family: var(--font-sans);
+   font-size: 16px;
+   scroll-behavior: smooth;
+   }
+
+   body {
+   margin: 0;
+   background-color: var(--bg-page);
+   color: var(--text-primary);
+   transition:
+      background-color var(--transition-normal),
+      color var(--transition-normal);
+   }
+
+   button,
+   input,
+   textarea,
+   select {
+   font: inherit;
+   }
+
+   button {
+   cursor: pointer;
+   }
+
+   :focus-visible {
+   outline: none;
+   box-shadow: var(--focus-ring);
+   }
+
+   ::selection {
+   background: var(--primary-light);
+   color: var(--text-primary);
+   }
+
+   @media (prefers-reduced-motion: reduce) {
+   *,
+   *::before,
+   *::after {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+   }
+   }
 ```
 
 ---

@@ -27,6 +27,7 @@ class CustomLoginForm(forms.Form):
                 "id": "id_username_or_email",
             }
         ),
+        help_text="Use the username or email address linked to your account.",
         error_messages={
             "required": "Please enter your username or email address.",
         },
@@ -44,6 +45,7 @@ class CustomLoginForm(forms.Form):
                 "id": "id_password",
             }
         ),
+        help_text="Passwords are case-sensitive.",
         error_messages={
             "required": "Please enter your account password.",
         },
