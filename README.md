@@ -6,6 +6,8 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 
 ## 🌟 Key Highlights
 
+- **Product Catalog & Category Exploration:** Browse comprehensive product offerings with real-time category filtering, SKU and keyword search, sorting (price, newest, name), and stock status indicators.
+- **Rich Multi-Image Gallery Showcase:** Interactive product detail views with multi-image thumbnail galleries, specification grids, quantity selection, and related product recommendations.
 - **Dual-Identifier Authentication:** Log in seamlessly using either your unique **Username** or verified **Email** address (case-insensitive).
 - **User Registration Flow:** Sign up with unique username/email validation, password policy confirmation, and automatic session login.
 - **User Profile Management:** Authenticated profile dashboard supporting first/last name, phone, date of birth, and avatar image uploads.
@@ -15,7 +17,7 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **Session Flexibility:** 30-day persistent session support via "Remember Me", or secure browser-close expiry.
 - **High-Empathy UI/UX:** Inline field-anchored errors, live loading spinner states on submission to prevent double clicks, and accessible password visibility toggles.
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
-- **100% Automated Test Suite:** 30 comprehensive unit and integration tests covering the complete authentication, registration, profile, and security lifecycle.
+- **100% Automated Test Suite:** 53 comprehensive unit and integration tests covering the complete authentication, registration, profile management, password recovery, product catalog, categories, gallery, and security lifecycle.
 
 ---
 
@@ -39,16 +41,24 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 ```text
 ecommerce/
 ├── apps/
-│   └── accounts/               # Custom user management & authentication app
-│       ├── migrations/         # Database migration files
-│       ├── admin.py            # CustomUser admin configuration
-│       ├── apps.py             # App configuration
-│       ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
-│       ├── forms.py            # CustomLoginForm, CustomRegistrationForm, UserProfileForm, CustomPasswordResetForm, CustomSetPasswordForm
-│       ├── models.py           # CustomUser model (AbstractUser)
-│       ├── tests.py            # Comprehensive 30-case test suite
-│       ├── urls.py             # App URL patterns (login, logout, register, profile, password reset)
-│       └── views.py            # CustomLoginView, CustomLogoutView, RegisterView, ProfileView, HomeView, Password Reset Views
+│   ├── accounts/               # Custom user management & authentication app
+│   │   ├── migrations/         # Database migration files
+│   │   ├── admin.py            # CustomUser admin configuration
+│   │   ├── apps.py             # App configuration
+│   │   ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
+│   │   ├── forms.py            # CustomLoginForm, CustomRegistrationForm, UserProfileForm, CustomPasswordResetForm, CustomSetPasswordForm
+│   │   ├── models.py           # CustomUser model (AbstractUser)
+│   │   ├── tests.py            # Comprehensive 30-case test suite
+│   │   ├── urls.py             # App URL patterns (login, logout, register, profile, password reset)
+│   │   └── views.py            # CustomLoginView, CustomLogoutView, RegisterView, ProfileView, HomeView, Password Reset Views
+│   └── catalog/                # Product catalog & categories app
+│       ├── migrations/         # Category, Product, ProductImage migrations
+│       ├── admin.py            # Admin configs with inlines & product counts
+│       ├── apps.py             # Catalog app configuration
+│       ├── models.py           # Category, Product, ProductImage models
+│       ├── tests.py            # Comprehensive 23-case test suite
+│       ├── urls.py             # Product list, category & detail routes
+│       └── views.py            # ProductListView, ProductDetailView
 ├── core/
 │   ├── asgi.py                 # ASGI configuration
 │   ├── settings.py             # Django project settings & database configuration
@@ -70,6 +80,9 @@ ecommerce/
 │   │   ├── password_reset_complete.html # Success confirmation screen
 │   │   ├── password_reset_email.html    # HTML/text reset instructions
 │   │   └── password_reset_subject.txt   # Reset email subject line
+│   ├── catalog/
+│   │   ├── product_list.html   # Product catalog with search, filters & pagination
+│   │   └── product_detail.html # Rich product view with gallery & related products
 │   ├── base.html               # Master layout with zero-FOUC theme script & header
 │   └── home.html               # Dashboard & catalog showcase view
 ├── .env.example                # Template for environment configuration
@@ -163,11 +176,18 @@ Visit `http://127.0.0.1:8000/` in your browser.
 ## 🧪 Running Automated Tests & Linting
 
 ### Running Unit & Integration Tests
-Execute the comprehensive test suite in `apps/accounts/tests.py`:
+Execute the comprehensive test suites:
 ```bash
-uv run python manage.py test apps.accounts
+# Test the Product Catalog app (23 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.catalog
+
+# Test the Accounts & Auth app (30 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts
+
+# Run all test suites across the project (53 test cases)
+$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts apps.catalog
 ```
-*All 30 authentication, registration, profile management, password recovery, and security test cases will execute.*
+*All 53 unit and integration tests across accounts and catalog will execute.*
 
 ### Code Quality & Linter
 Run `Ruff` to verify code standards:

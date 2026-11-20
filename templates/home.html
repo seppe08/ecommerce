@@ -16,7 +16,8 @@
         <p>A finely crafted platform engineered with high performance, accessibility, and elegance.</p>
       {% endif %}
     </div>
-    <div>
+    <div class="hero-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+      <a href="{% url 'catalog:product_list' %}" class="btn btn-solid-on-gradient">Browse Catalog</a>
       {% if user.is_authenticated %}
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
           <a href="{% url 'profile' %}" class="btn btn-solid-on-gradient" aria-label="Manage profile">
