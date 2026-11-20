@@ -329,5 +329,3 @@ Whenever a feature, module, or enhancement is successfully implemented:
 - [x] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering.
 - [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
 - [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
-- [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
-- [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
