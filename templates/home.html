@@ -1,172 +1,263 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Dashboard & Catalog — AuraStore{% endblock %}
+{% block title %}AuraStore — Modern Living &amp; Curated Objects{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+<div class="home-page">
 
-  <!-- Hero Welcome Banner -->
-  <section class="dashboard-hero">
-    <div class="dashboard-hero-content">
-      {% if user.is_authenticated %}
-        <h1>Welcome back, {{ user.first_name|default:user.username }}!</h1>
-        <p>You have full access to your personalized dashboard and curated collections.</p>
-      {% else %}
-        <h1>Modern E-Commerce Experience</h1>
-        <p>A finely crafted platform engineered with high performance, accessibility, and elegance.</p>
-      {% endif %}
+  <!-- Authenticated Member Greeting Banner (Retaining test assertion: "Welcome back") -->
+  {% if user.is_authenticated %}
+    <div class="member-welcome-banner reveal-on-scroll">
+      <div class="member-welcome-content">
+        <span class="member-welcome-eyebrow">Authenticated Member</span>
+        <h1 class="member-welcome-title">Welcome back, {{ user.first_name|default:user.username }}!</h1>
+        <p class="member-welcome-desc">Explore your curated catalog, review active orders, or manage your personal details.</p>
+      </div>
+      <div class="member-welcome-actions">
+        <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="16" height="20" x="4" y="2" rx="2"></rect>
+            <line x1="8" y1="6" x2="16" y2="6"></line>
+            <line x1="8" y1="10" x2="16" y2="10"></line>
+            <line x1="8" y1="14" x2="12" y2="14"></line>
+          </svg>
+          <span class="btn-label">Your Orders</span>
+        </a>
+        <a href="{% url 'profile' %}" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span class="btn-label">Personal Information</span>
+        </a>
+      </div>
     </div>
-    <div class="hero-actions" style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-      <a href="{% url 'catalog:product_list' %}" class="btn btn-solid-on-gradient">Browse Catalog</a>
-      {% if user.is_authenticated %}
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <a href="{% url 'profile' %}" class="btn btn-solid-on-gradient" aria-label="Manage profile">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-            <span class="btn-label">Manage Profile</span>
-          </a>
-          <a href="{% url 'logout' %}" class="btn btn-on-gradient" aria-label="Sign out">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span class="btn-label">Sign Out</span>
-          </a>
-        </div>
-      {% else %}
-        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-          <a href="{% url 'register' %}" class="btn btn-solid-on-gradient">Create Account</a>
-          <a href="{% url 'login' %}" class="btn btn-on-gradient">Sign In</a>
-        </div>
-      {% endif %}
-    </div>
-  </section>
+  {% endif %}
 
-  <!-- Content Grid -->
-  <div class="dashboard-grid">
-    <!-- User Account State Card -->
-    <div class="card">
-      <h2 class="card-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
-        </svg>
-        Authentication Status
-        {% if user.is_authenticated %}
-          <span class="badge badge-success u-ms-auto">Active</span>
-        {% else %}
-          <span class="badge badge-warning u-ms-auto">Guest</span>
-        {% endif %}
-      </h2>
-
-      {% if user.is_authenticated %}
-        <div class="info-list">
-          <div class="info-row">
-            <span class="info-label">Username:</span>
-            <span class="info-value">{{ user.username }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Email:</span>
-            <span class="info-value">{{ user.email|default:"Not specified" }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Phone:</span>
-            <span class="info-value">{{ user.phone|default:"None on file" }}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Staff Privilege:</span>
-            <span class="info-value">{% if user.is_staff %}Yes (Staff){% else %}Standard Member{% endif %}</span>
-          </div>
-          <div class="info-row">
-            <span class="info-label">Last Login:</span>
-            <span class="info-value">{{ user.last_login|date:"M d, Y H:i"|default:"First session" }}</span>
-          </div>
-        </div>
-        <div style="margin-top: 1.25rem;">
-          <a href="{% url 'profile' %}" class="btn btn-secondary btn-block">Edit Profile Details</a>
-        </div>
-      {% else %}
-        <p class="u-text-secondary">
-          You are currently browsing as a guest. Sign in to access your saved cart, personalized recommendations, and orders.
+  <!-- Editorial Hero Section -->
+  <section class="editorial-hero reveal-on-scroll" aria-labelledby="hero-heading">
+    <div class="editorial-hero-grid">
+      <div class="hero-copy-wrap">
+        <span class="hero-eyebrow">AUTUMN / WINTER COLLECTION</span>
+        <h1 id="hero-heading" class="hero-headline">Curated objects for mindful living.</h1>
+        <p class="hero-subtext">
+          A timeless collection of precision-engineered electronics, elevated workspace essentials, and minimalist apparel crafted to last.
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.625rem;">
-          <a href="{% url 'login' %}" class="btn btn-primary btn-block">
-            Sign In with Username or Email
+        <div class="hero-cta-group">
+          <a href="{% url 'catalog:product_list' %}" class="btn btn-primary btn-lg" aria-label="Explore catalog products">
+            <span class="btn-label">Explore Catalog</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
           </a>
-          <a href="{% url 'register' %}" class="btn btn-secondary btn-block">
-            Create an Account
+          <a href="{% url 'catalog:product_list' %}?featured=true" class="btn btn-outline btn-lg" aria-label="View featured objects">
+            <span class="btn-label">View Featured</span>
           </a>
         </div>
-      {% endif %}
-    </div>
+      </div>
 
-    <!-- Design System & Theme Showcase Card -->
-    <div class="card">
-      <h2 class="card-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="m4.93 4.93 4.24 4.24"></path>
-          <path d="m14.83 9.17 4.24-4.24"></path>
-          <path d="m14.83 14.83 4.24 4.24"></path>
-          <path d="m9.17 14.83-4.24 4.24"></path>
-        </svg>
-        Theme &amp; Typography Standard
-      </h2>
-      <p class="u-text-secondary">
-        This project enforces strict visual cohesion across both Light and Dark modes. Try toggling the theme button in the top navigation bar!
-      </p>
-      <div class="u-stack-sm">
-        <div class="spec-row">
-          <span class="u-label u-text-secondary">Font Stack</span>
-          <span class="spec-value">Plus Jakarta Sans</span>
-        </div>
-        <div class="spec-row">
-          <span class="u-label u-text-secondary">FOUC Elimination</span>
-          <span class="spec-value spec-value-success">100% Synchronous Head Exec</span>
-        </div>
-        <div class="spec-row">
-          <span class="u-label u-text-secondary">Contrast Standard</span>
-          <span class="spec-value spec-value-info">WCAG 2.1 AA Compliant</span>
+      <!-- Hero Visual Accent (Gradient-free, editorial photography frame) -->
+      <div class="hero-visual-frame" aria-hidden="true">
+        <div class="hero-visual-inner">
+          <div class="hero-visual-badge">
+            <span class="hero-badge-dot"></span>
+            <span>Handpicked Quality</span>
+          </div>
+          <div class="hero-visual-graphic">
+            <svg class="hero-graphic-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="100" cy="100" r="80" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4" opacity="0.3"></circle>
+              <circle cx="100" cy="100" r="50" stroke="currentColor" stroke-width="1.5" opacity="0.6"></circle>
+              <rect x="75" y="75" width="50" height="50" rx="8" stroke="currentColor" stroke-width="1.5"></rect>
+            </svg>
+            <div class="hero-graphic-caption">
+              <span class="hero-caption-title">Pure Geometry</span>
+              <span class="hero-caption-sub">Form follows function</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Security & Validation Showcase Card -->
-    <div class="card">
-      <h2 class="card-title">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-        Authentication Flow Features
-      </h2>
-      <ul class="feature-list">
-        <li>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <span>Dual authentication via Username OR Email address</span>
-        </li>
-        <li>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <span>Granular error messaging (non-field &amp; inline field alerts)</span>
-        </li>
-        <li>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <span>Accessible password visibility toggle</span>
-        </li>
-        <li>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <span>Safe next-redirect with open-redirect mitigation</span>
-        </li>
-        <li>
-          <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          <span>30-day &ldquo;Remember me&rdquo; session persistence</span>
-        </li>
-      </ul>
+  <!-- Editorial Brand Values / Trust Pillars (Calm, no fabricated reviews) -->
+  <section class="trust-pillars-section reveal-on-scroll" aria-label="Store commitments">
+    <div class="trust-pillars-grid">
+      <div class="trust-pillar-item">
+        <div class="trust-pillar-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+            <line x1="2" y1="10" x2="22" y2="10"></line>
+          </svg>
+        </div>
+        <div class="trust-pillar-text">
+          <h2 class="trust-pillar-title">Complimentary Shipping</h2>
+          <p class="trust-pillar-desc">Carbon-neutral delivery on all orders worldwide.</p>
+        </div>
+      </div>
+
+      <div class="trust-pillar-item">
+        <div class="trust-pillar-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <div class="trust-pillar-text">
+          <h2 class="trust-pillar-title">Verified Craftsmanship</h2>
+          <p class="trust-pillar-desc">Authentic materials guaranteed with 2-year warranty.</p>
+        </div>
+      </div>
+
+      <div class="trust-pillar-item">
+        <div class="trust-pillar-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+            <path d="M8 16H3v5"></path>
+          </svg>
+        </div>
+        <div class="trust-pillar-text">
+          <h2 class="trust-pillar-title">30-Day Returns</h2>
+          <p class="trust-pillar-desc">Effortless, respectful return and exchange process.</p>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section class="home-section reveal-on-scroll" aria-labelledby="featured-heading">
+    <div class="section-header-row">
+      <div class="section-title-wrap">
+        <span class="section-eyebrow">CURATED SELECTION</span>
+        <h2 id="featured-heading" class="section-heading">Featured Objects</h2>
+      </div>
+      <a href="{% url 'catalog:product_list' %}?featured=true" class="section-action-link" aria-label="View all featured products">
+        <span>View all</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+
+    {% if featured_products %}
+      <div class="product-grid" role="region" aria-label="Featured products catalog">
+        {% for product in featured_products %}
+          <article class="product-card reveal-on-scroll" id="featured-product-card-{{ product.pk }}">
+            <!-- 4:5 Media Aspect Ratio with Hover Crossfade -->
+            <div class="product-card-media">
+              <a href="{{ product.get_absolute_url }}" class="product-card-media-link" aria-label="View {{ product.name }}">
+                {% if product.primary_image %}
+                  <img
+                    src="{{ product.primary_image.image.url }}"
+                    alt="{{ product.primary_image.alt_text|default:product.name }}"
+                    class="product-card-img primary-img"
+                    loading="lazy"
+                  >
+                  <!-- Secondary Gallery Image for Smooth Hover Crossfade -->
+                  {% if product.images.all|length > 1 %}
+                    <img
+                      src="{{ product.images.all.1.image.url }}"
+                      alt="{{ product.images.all.1.alt_text|default:product.name }}"
+                      class="product-card-img hover-img"
+                      loading="lazy"
+                    >
+                  {% endif %}
+                {% else %}
+                  <div class="product-card-placeholder" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                      <circle cx="9" cy="9" r="2"></circle>
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                    </svg>
+                  </div>
+                {% endif %}
+              </a>
+
+              <!-- Restrained Stock Badge (Only low stock or out of stock) -->
+              {% if not product.is_in_stock %}
+                <span class="badge badge-error product-card-badge">Out of Stock</span>
+              {% elif product.stock <= 3 %}
+                <span class="badge badge-warning product-card-badge">Only {{ product.stock }} left</span>
+              {% endif %}
+
+              <!-- Quick-Add Button (Appears on hover/focus on desktop; always visible on touch) -->
+              {% if product.is_in_stock %}
+                <form method="post" action="{% url 'cart:cart_add' product.id %}" class="quick-add-form" data-product-id="{{ product.id }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="quantity" value="1">
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="quick-add-btn" aria-label="Quick add {{ product.name }} to cart">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add to Cart</span>
+                  </button>
+                </form>
+              {% endif %}
+            </div>
+
+            <!-- Product Information -->
+            <div class="product-card-body">
+              <span class="product-card-category">{{ product.category.name }}</span>
+              <h3 class="product-card-title">
+                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+              </h3>
+              <div class="product-card-price-row">
+                <span class="product-card-price">${{ product.price }}</span>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-showcase-box">
+        <p class="empty-showcase-text">Our new seasonal pieces are currently arriving. Explore our complete directory.</p>
+        <a href="{% url 'catalog:product_list' %}" class="btn btn-secondary">Explore Catalog</a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Categories Showcase Section -->
+  {% if categories %}
+    <section class="home-section reveal-on-scroll" aria-labelledby="categories-heading">
+      <div class="section-header-row">
+        <div class="section-title-wrap">
+          <span class="section-eyebrow">EXPLORE BY CATEGORY</span>
+          <h2 id="categories-heading" class="section-heading">Curated Disciplines</h2>
+        </div>
+      </div>
+
+      <div class="categories-grid">
+        {% for cat in categories %}
+          <a href="{{ cat.get_absolute_url }}" class="category-tile-card reveal-on-scroll">
+            <div class="category-tile-media">
+              {% if cat.image %}
+                <img src="{{ cat.image.url }}" alt="{{ cat.name }}" class="category-tile-img" loading="lazy">
+              {% else %}
+                <div class="category-tile-placeholder" aria-hidden="true">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                  </svg>
+                </div>
+              {% endif %}
+            </div>
+            <div class="category-tile-overlay">
+              <h3 class="category-tile-title">{{ cat.name }}</h3>
+              {% if cat.product_count %}
+                <span class="category-tile-count">{{ cat.product_count }} {% if cat.product_count == 1 %}item{% else %}items{% endif %}</span>
+              {% endif %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 
 </div>
 {% endblock %}

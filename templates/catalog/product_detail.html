@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ product.name }} — AuraStore Catalog{% endblock %}
 
@@ -26,68 +27,85 @@
     </ol>
   </nav>
 
-  <!-- Product Detail Grid -->
+  <!-- Product Detail Grid: Sticky Gallery (Left) & Sticky Buy Box (Right) -->
   <div class="product-detail-grid">
 
-    <!-- Left Column: Gallery Card -->
+    <!-- Left Column: Sticky Gallery with Click-to-Zoom & Thumbnails -->
     <div class="product-gallery-card">
-      <div class="product-main-image-wrap">
+      <div class="product-main-image-wrap" id="main-image-container">
+        <!-- Stock / Featured Badges -->
         <div class="product-badge-group">
           {% if product.featured %}
-            <span class="badge-featured" title="Featured product">
+            <span class="badge-featured" title="Featured object">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
               Featured
             </span>
           {% endif %}
-          {% if product.is_in_stock %}
-            <span class="badge badge-success">In Stock</span>
-          {% else %}
+          {% if not product.is_in_stock %}
             <span class="badge badge-error">Out of Stock</span>
+          {% elif product.stock <= 3 %}
+            <span class="badge badge-warning">Only {{ product.stock }} left</span>
           {% endif %}
         </div>
 
-        {% if primary_image %}
-          <img
-            id="main-product-img"
-            src="{{ primary_image.image.url }}"
-            alt="{{ primary_image.alt_text|default:product.name }}"
-            class="product-main-image"
-          >
-        {% elif gallery_images %}
-          <img
-            id="main-product-img"
-            src="{{ gallery_images.0.image.url }}"
-            alt="{{ gallery_images.0.alt_text|default:product.name }}"
-            class="product-main-image"
-          >
-        {% else %}
-          <div class="product-card-placeholder" aria-hidden="true">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-              <circle cx="9" cy="9" r="2"></circle>
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-            </svg>
-            <span class="u-text-sm">No image available</span>
-          </div>
-        {% endif %}
+        <!-- Zoom Trigger Button -->
+        <button type="button" class="product-zoom-toggle-btn" id="zoom-toggle-btn" aria-label="Click to zoom image" title="Zoom image">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="11" y1="8" x2="11" y2="14"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+        </button>
+
+        <!-- Main Product Image (CSS transform click-to-zoom) -->
+        <div class="product-zoom-stage" id="zoom-stage">
+          {% if primary_image %}
+            <img
+              id="main-product-img"
+              src="{{ primary_image.image.url }}"
+              alt="{{ primary_image.alt_text|default:product.name }}"
+              class="product-main-image"
+              loading="eager"
+            >
+          {% elif gallery_images %}
+            <img
+              id="main-product-img"
+              src="{{ gallery_images.0.image.url }}"
+              alt="{{ gallery_images.0.alt_text|default:product.name }}"
+              class="product-main-image"
+              loading="eager"
+            >
+          {% else %}
+            <div class="product-card-placeholder" aria-hidden="true">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                <circle cx="9" cy="9" r="2"></circle>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+              </svg>
+              <span class="u-text-sm">No image available</span>
+            </div>
+          {% endif %}
+        </div>
       </div>
 
-      <!-- Thumbnails Carousel/Grid -->
+      <!-- Horizontal Thumbnails Strip -->
       {% if gallery_images|length > 1 %}
-        <div class="product-thumbnails-grid" role="group" aria-label="Product image gallery thumbnails">
+        <div class="product-thumbnails-strip" role="group" aria-label="Product image gallery thumbnails">
           {% for img in gallery_images %}
             <button
               type="button"
               class="product-thumb-btn {% if forloop.first %}active{% endif %}"
-              onclick="updateMainImage('{{ img.image.url }}', '{{ img.alt_text|default:product.name|escapejs }}', this)"
-              aria-label="View thumbnail image {{ forloop.counter }} of {{ gallery_images|length }}"
+              onclick="AuraStore.updateMainImage('{{ img.image.url }}', '{{ img.alt_text|default:product.name|escapejs }}', this)"
+              aria-label="View gallery photo {{ forloop.counter }} of {{ gallery_images|length }}"
             >
               <img
                 src="{{ img.image.url }}"
                 alt="{{ img.alt_text|default:product.name }}"
                 class="product-thumb-img"
+                loading="lazy"
               >
             </button>
           {% endfor %}
@@ -95,68 +113,44 @@
       {% endif %}
     </div>
 
-    <!-- Right Column: Product Info Panel -->
+    <!-- Right Column: Sticky Buy Box & Detailed Product Content -->
     <div class="product-info-panel">
-      <a href="{% url 'catalog:product_list_by_category' category_slug=product.category.slug %}" class="product-category-tag">
-        {{ product.category.name }}
-      </a>
+      
+      <!-- Buy Box Card -->
+      <div class="product-buy-box">
+        <a href="{% url 'catalog:product_list_by_category' category_slug=product.category.slug %}" class="product-category-tag">
+          {{ product.category.name }}
+        </a>
 
-      <h1 class="product-title">{{ product.name }}</h1>
+        <h1 class="product-title">{{ product.name }}</h1>
 
-      <div class="product-price-section">
-        <span class="product-detail-price">${{ product.price }}</span>
-        {% if product.is_in_stock %}
-          <span class="badge badge-success">{{ product.stock }} available</span>
-        {% else %}
-          <span class="badge badge-error">Currently unavailable</span>
-        {% endif %}
-      </div>
-
-      <!-- Specs Card -->
-      <div class="product-specs-card">
-        <div class="product-spec-item">
-          <span class="product-spec-label">SKU</span>
-          <span class="product-spec-val">{{ product.sku }}</span>
-        </div>
-        <div class="product-spec-item">
-          <span class="product-spec-label">Category</span>
-          <span class="product-spec-val">{{ product.category.name }}</span>
-        </div>
-        <div class="product-spec-item">
-          <span class="product-spec-label">Availability</span>
-          <span class="product-spec-val">
-            {% if product.is_in_stock %}
-              In Stock ({{ product.stock }})
-            {% else %}
-              Out of Stock
-            {% endif %}
-          </span>
-        </div>
-        <div class="product-spec-item">
-          <span class="product-spec-label">Listed Date</span>
-          <span class="product-spec-val">{{ product.created_at|date:"M d, Y" }}</span>
-        </div>
-      </div>
-
-      <!-- Description Section -->
-      <div class="product-description-wrap">
-        <h2 class="product-description-title">Product Description</h2>
-        <div class="product-description-text">
-          {% if product.description %}
-            <p>{{ product.description|linebreaksbr }}</p>
+        <div class="product-price-section">
+          <span class="product-detail-price">${{ product.price }}</span>
+          {% if product.is_in_stock %}
+            <span class="badge badge-success">In Stock</span>
           {% else %}
-            <p>No detailed description provided for this product.</p>
+            <span class="badge badge-error">Out of Stock</span>
           {% endif %}
         </div>
-      </div>
 
-      <!-- Actions Bar -->
-      <div class="product-actions-bar">
+        <!-- Add to Cart Form with Stepper -->
         {% if product.is_in_stock %}
           <form method="post" action="{% url 'cart:cart_add' product.id %}" class="add-to-cart-form" id="add-to-cart-form">
             {% csrf_token %}
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center;">
+            <div class="product-purchase-row">
+              <!-- Tactile Quantity Stepper -->
+              <div class="qty-stepper-control" role="group" aria-label="Product quantity controls">
+                <button
+                  type="button"
+                  class="qty-stepper-btn qty-stepper-dec"
+                  id="qty-dec-btn"
+                  aria-label="Decrease quantity"
+                  title="Decrease quantity"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
                 <label for="product-qty-input" class="u-sr-only">Quantity</label>
                 <input
                   id="product-qty-input"
@@ -165,12 +159,26 @@
                   value="1"
                   min="1"
                   max="{{ product.stock }}"
-                  style="width: 70px; height: 46px; text-align: center; border-radius: var(--radius-md); border: 1.5px solid var(--border-subtle); background-color: var(--bg-input); color: var(--text-primary); font-size: var(--text-base); font-weight: 600;"
+                  class="qty-stepper-input"
                   aria-label="Select quantity to add"
                 >
+                <button
+                  type="button"
+                  class="qty-stepper-btn qty-stepper-inc"
+                  id="qty-inc-btn"
+                  aria-label="Increase quantity"
+                  title="Increase quantity"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </button>
               </div>
-              <button type="submit" class="btn btn-primary" style="min-height: 46px;" aria-label="Add {{ product.name }} to cart">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+
+              <!-- Dominant Add to Cart Button -->
+              <button type="submit" class="btn btn-primary btn-lg product-add-btn" aria-label="Add {{ product.name }} to cart">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="8" cy="21" r="1"></circle>
                   <circle cx="19" cy="21" r="1"></circle>
                   <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
@@ -180,59 +188,207 @@
             </div>
           </form>
         {% else %}
-          <button type="button" class="btn btn-secondary" disabled style="min-height: 46px; opacity: 0.5; cursor: not-allowed;" aria-disabled="true">
-            <span class="btn-label">Out of Stock</span>
-          </button>
+          <div class="product-out-of-stock-wrap">
+            <button type="button" class="btn btn-secondary btn-block btn-lg" disabled aria-disabled="true">
+              <span class="btn-label">Currently Unavailable</span>
+            </button>
+          </div>
         {% endif %}
 
-        <a href="{% url 'catalog:product_list' %}" class="btn btn-secondary" style="min-height: 46px;" aria-label="Return to full product catalog">
-          <span class="btn-label">Back to Catalog</span>
-        </a>
+        <!-- Reassurance & Trust Microcopy -->
+        <div class="product-trust-strip">
+          <div class="trust-strip-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="trust-icon" aria-hidden="true">
+              <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+              <line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+            <span>Complimentary carbon-neutral shipping on this item</span>
+          </div>
+          <div class="trust-strip-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="trust-icon" aria-hidden="true">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+              <path d="M21 3v5h-5"></path>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+              <path d="M8 16H3v5"></path>
+            </svg>
+            <span>30-day trial period &amp; effortless returns</span>
+          </div>
+          <div class="trust-strip-item">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="trust-icon" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>2-year warranty &amp; verified authenticity</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabbed Information Panels (Description, Specs, Shipping) -->
+      <div class="product-tabs-container">
+        <div class="product-tabs-nav" role="tablist" aria-label="Product detailed information">
+          <button
+            type="button"
+            role="tab"
+            class="product-tab-btn active"
+            id="tab-desc-btn"
+            aria-selected="true"
+            aria-controls="tab-desc-panel"
+            onclick="AuraStore.switchProductTab('tab-desc', this)"
+          >
+            Description
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="product-tab-btn"
+            id="tab-specs-btn"
+            aria-selected="false"
+            aria-controls="tab-specs-panel"
+            onclick="AuraStore.switchProductTab('tab-specs', this)"
+          >
+            Specifications
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="product-tab-btn"
+            id="tab-shipping-btn"
+            aria-selected="false"
+            aria-controls="tab-shipping-panel"
+            onclick="AuraStore.switchProductTab('tab-shipping', this)"
+          >
+            Shipping &amp; Care
+          </button>
+        </div>
+
+        <!-- Description Tab Panel -->
+        <div class="product-tab-panel active" id="tab-desc-panel" role="tabpanel" aria-labelledby="tab-desc-btn">
+          <div class="product-description-text">
+            {% if product.description %}
+              <p>{{ product.description|linebreaksbr }}</p>
+            {% else %}
+              <p>No detailed description provided for this curated object.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Specifications Tab Panel -->
+        <div class="product-tab-panel" id="tab-specs-panel" role="tabpanel" aria-labelledby="tab-specs-btn" hidden>
+          <div class="product-specs-list">
+            <div class="specs-list-row">
+              <span class="specs-label">SKU Identifier</span>
+              <span class="specs-value">{{ product.sku }}</span>
+            </div>
+            <div class="specs-list-row">
+              <span class="specs-label">Discipline / Category</span>
+              <span class="specs-value">{{ product.category.name }}</span>
+            </div>
+            <div class="specs-list-row">
+              <span class="specs-label">Inventory Status</span>
+              <span class="specs-value">
+                {% if product.is_in_stock %}
+                  {{ product.stock }} units verified in stock
+                {% else %}
+                  Out of Stock
+                {% endif %}
+              </span>
+            </div>
+            <div class="specs-list-row">
+              <span class="specs-label">Archived / Added Date</span>
+              <span class="specs-value">{{ product.created_at|date:"M d, Y" }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shipping & Returns Tab Panel -->
+        <div class="product-tab-panel" id="tab-shipping-panel" role="tabpanel" aria-labelledby="tab-shipping-btn" hidden>
+          <div class="product-shipping-content">
+            <p><strong>Worldwide Delivery:</strong> Orders ship in discrete, recyclable packaging via carbon-neutral transit within 1–2 business days. Standard delivery window is 2–4 business days.</p>
+            <p><strong>Returns &amp; Exchanges:</strong> You have 30 calendar days to experience your item. If it does not harmonize with your environment, request a complimentary prepaid return label.</p>
+          </div>
+        </div>
       </div>
 
     </div>
 
   </div>
 
-  <!-- Related Products Section -->
+  <!-- Related Products Section: Image-First Horizontal Rail -->
   {% if related_products %}
-    <section class="related-products-section" aria-labelledby="related-products-heading">
-      <h2 id="related-products-heading" class="related-products-title">Related Products in {{ product.category.name }}</h2>
+    <section class="related-products-section reveal-on-scroll" aria-labelledby="related-products-heading">
+      <div class="section-header-row">
+        <div class="section-title-wrap">
+          <span class="section-eyebrow">HARMONIOUS OBJECTS</span>
+          <h2 id="related-products-heading" class="section-heading">More from {{ product.category.name }}</h2>
+        </div>
+        <a href="{% url 'catalog:product_list_by_category' category_slug=product.category.slug %}" class="section-action-link">
+          <span>View category</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
 
-      <div class="catalog-grid">
+      <div class="product-grid" role="region" aria-label="Related products">
         {% for rel in related_products %}
-          <article class="product-card" id="related-product-card-{{ rel.pk }}">
+          <article class="product-card reveal-on-scroll" id="related-product-card-{{ rel.pk }}">
             <div class="product-card-media">
-              {% if rel.primary_image %}
-                <img
-                  src="{{ rel.primary_image.image.url }}"
-                  alt="{{ rel.primary_image.alt_text|default:rel.name }}"
-                  class="product-card-img"
-                  loading="lazy"
-                >
-              {% else %}
-                <div class="product-card-placeholder" aria-hidden="true">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                    <circle cx="9" cy="9" r="2"></circle>
-                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                  </svg>
-                </div>
+              <a href="{{ rel.get_absolute_url }}" class="product-card-media-link" aria-label="View {{ rel.name }}">
+                {% if rel.primary_image %}
+                  <img
+                    src="{{ rel.primary_image.image.url }}"
+                    alt="{{ rel.primary_image.alt_text|default:rel.name }}"
+                    class="product-card-img primary-img"
+                    loading="lazy"
+                  >
+                  {% if rel.images.all|length > 1 %}
+                    <img
+                      src="{{ rel.images.all.1.image.url }}"
+                      alt="{{ rel.images.all.1.alt_text|default:rel.name }}"
+                      class="product-card-img hover-img"
+                      loading="lazy"
+                    >
+                  {% endif %}
+                {% else %}
+                  <div class="product-card-placeholder" aria-hidden="true">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                      <circle cx="9" cy="9" r="2"></circle>
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                    </svg>
+                  </div>
+                {% endif %}
+              </a>
+
+              {% if not rel.is_in_stock %}
+                <span class="badge badge-error product-card-badge">Out of Stock</span>
+              {% elif rel.stock <= 3 %}
+                <span class="badge badge-warning product-card-badge">Only {{ rel.stock }} left</span>
+              {% endif %}
+
+              {% if rel.is_in_stock %}
+                <form method="post" action="{% url 'cart:cart_add' rel.id %}" class="quick-add-form" data-product-id="{{ rel.id }}">
+                  {% csrf_token %}
+                  <input type="hidden" name="quantity" value="1">
+                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="quick-add-btn" aria-label="Quick add {{ rel.name }} to cart">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add to Cart</span>
+                  </button>
+                </form>
               {% endif %}
             </div>
+
             <div class="product-card-body">
               <span class="product-card-category">{{ rel.category.name }}</span>
               <h3 class="product-card-title">
                 <a href="{{ rel.get_absolute_url }}">{{ rel.name }}</a>
               </h3>
-              <div class="product-card-meta">
+              <div class="product-card-price-row">
                 <span class="product-card-price">${{ rel.price }}</span>
-                <span class="product-card-sku">SKU: {{ rel.sku }}</span>
-              </div>
-              <div class="product-card-actions">
-                <a href="{{ rel.get_absolute_url }}" class="btn btn-secondary btn-block" aria-label="View details for {{ rel.name }}">
-                  <span class="btn-label">View Details</span>
-                </a>
               </div>
             </div>
           </article>
@@ -242,23 +398,4 @@
   {% endif %}
 
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-  function updateMainImage(url, alt, btn) {
-    var mainImg = document.getElementById('main-product-img');
-    if (mainImg) {
-      mainImg.src = url;
-      mainImg.alt = alt;
-    }
-    var buttons = document.querySelectorAll('.product-thumb-btn');
-    buttons.forEach(function(b) {
-      b.classList.remove('active');
-    });
-    if (btn) {
-      btn.classList.add('active');
-    }
-  }
-</script>
 {% endblock %}

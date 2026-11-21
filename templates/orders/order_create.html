@@ -17,6 +17,32 @@
     </ol>
   </nav>
 
+  <!-- Checkout Stepper Progress -->
+  <nav class="checkout-stepper" aria-label="Checkout Progress">
+    <ol class="stepper-list">
+      <li class="stepper-step stepper-done">
+        <a href="{% url 'cart:cart_detail' %}" class="stepper-link">
+          <span class="stepper-bubble">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </span>
+          <span class="stepper-title">Cart</span>
+        </a>
+      </li>
+      <li class="stepper-sep" aria-hidden="true"></li>
+      <li class="stepper-step stepper-active" aria-current="step">
+        <span class="stepper-bubble">2</span>
+        <span class="stepper-title">Checkout</span>
+      </li>
+      <li class="stepper-sep" aria-hidden="true"></li>
+      <li class="stepper-step">
+        <span class="stepper-bubble">3</span>
+        <span class="stepper-title">Confirmation</span>
+      </li>
+    </ol>
+  </nav>
+
   <div class="checkout-header">
     <h1 class="checkout-heading">Secure Checkout</h1>
     <p class="checkout-subheading">Complete your shipping and contact information to place your order.</p>
@@ -38,7 +64,7 @@
           {% csrf_token %}
 
           {% if form.non_field_errors %}
-            <div class="alert alert-error" role="alert" style="margin-bottom: 1.5rem;">
+            <div class="alert alert-error form-error-alert" role="alert">
               <div class="alert-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <circle cx="12" cy="12" r="10"></circle>
@@ -223,7 +249,23 @@
 
     <!-- Right Column: Order Summary -->
     <aside class="checkout-summary-panel" aria-labelledby="checkout-summary-heading">
-      <div class="checkout-summary-card">
+      <!-- Mobile Collapsible Trigger -->
+      <button type="button" class="summary-mobile-toggle" id="summary-toggle-btn" aria-expanded="false" aria-controls="checkout-summary-card">
+        <span class="summary-mobile-toggle-left">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="8" cy="21" r="1"></circle>
+            <circle cx="19" cy="21" r="1"></circle>
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+          </svg>
+          <span class="toggle-text">Show order summary</span>
+          <svg class="toggle-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </span>
+        <span class="summary-mobile-total">${{ subtotal }}</span>
+      </button>
+
+      <div class="checkout-summary-card" id="checkout-summary-card">
         <h2 id="checkout-summary-heading" class="summary-heading">
           Order Summary ({{ cart.get_item_count }})
         </h2>
@@ -262,7 +304,7 @@
           {% endfor %}
         </div>
 
-        <div class="summary-breakdown" style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle);">
+        <div class="summary-breakdown summary-breakdown-bordered">
           <div class="summary-row">
             <span class="summary-label">Subtotal</span>
             <span class="summary-value">${{ subtotal }}</span>
@@ -282,7 +324,7 @@
           </div>
         </div>
 
-        <div style="margin-top: 1.5rem;">
+        <div class="summary-actions-bottom">
           <a href="{% url 'cart:cart_detail' %}" class="btn btn-secondary btn-block" aria-label="Edit items in cart">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="15 18 9 12 15 6"></polyline>

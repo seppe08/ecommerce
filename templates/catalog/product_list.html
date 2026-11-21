@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}
   {% if current_category %}
@@ -6,7 +7,7 @@
   {% elif search_query %}
     Search results for "{{ search_query }}" — AuraStore Catalog
   {% else %}
-    Products Catalog — AuraStore
+    Curated Catalog — AuraStore
   {% endif %}
 {% endblock %}
 
@@ -33,29 +34,38 @@
   </nav>
 
   <!-- Header Section -->
-  <header class="catalog-header">
+  <header class="catalog-header reveal-on-scroll">
+    <span class="catalog-eyebrow">
+      {% if current_category %}
+        COLLECTION &bull; {{ current_category.name|upper }}
+      {% elif search_query %}
+        SEARCH RESULTS
+      {% else %}
+        FULL ARCHIVE
+      {% endif %}
+    </span>
     <h1 class="catalog-title">
       {% if current_category %}
         {{ current_category.name }}
       {% elif search_query %}
-        Search Results for &ldquo;{{ search_query }}&rdquo;
+        Search: &ldquo;{{ search_query }}&rdquo;
       {% else %}
-        Product Catalog
+        Curated Objects
       {% endif %}
     </h1>
     <p class="catalog-subtitle">
       {% if current_category and current_category.description %}
         {{ current_category.description }}
       {% elif search_query %}
-        Showing matching products for your search query.
+        Showing matching pieces across our curated collections.
       {% else %}
-        Discover our curated selection of premium electronics, lifestyle accessories, and apparel.
+        A calm, mindful archive of precision electronics, workplace objects, and timeless essentials.
       {% endif %}
     </p>
   </header>
 
   <!-- Search & Filter Toolbar -->
-  <section class="catalog-toolbar" aria-label="Catalog filters and search">
+  <section class="catalog-toolbar reveal-on-scroll" aria-label="Catalog filters and search">
     <form method="get" class="catalog-search-form" role="search">
       {% if current_category %}
         <input type="hidden" name="category" value="{{ current_category.slug }}">
@@ -63,7 +73,7 @@
 
       <!-- Search Input Slot -->
       <div class="search-input-wrapper">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
@@ -73,7 +83,7 @@
           type="search"
           name="q"
           value="{{ search_query }}"
-          placeholder="Search by name, SKU, or keyword..."
+          placeholder="Search by title, SKU, or attribute..."
           class="search-input"
           autocomplete="off"
         >
@@ -102,76 +112,97 @@
       {% endif %}
     </form>
 
-    <!-- Category Filter Pills -->
+    <!-- Horizontally Scrollable Category Chips (with Scroll-Snap and Edge Fade) -->
     {% if categories %}
-      <div class="category-pills-container" role="navigation" aria-label="Filter by product category">
-        <a
-          href="{% url 'catalog:product_list' %}{% if search_query %}?q={{ search_query }}{% endif %}"
-          class="category-pill {% if not current_category %}active{% endif %}"
-          aria-label="View all categories"
-        >
-          All Categories
-        </a>
-        {% for cat in categories %}
+      <div class="category-pills-scroll-wrapper" role="navigation" aria-label="Filter by product category">
+        <div class="category-pills-container">
           <a
-            href="{% url 'catalog:product_list_by_category' category_slug=cat.slug %}{% if search_query %}?q={{ search_query }}{% endif %}"
-            class="category-pill {% if current_category and current_category.slug == cat.slug %}active{% endif %}"
-            aria-label="Filter by {{ cat.name }} ({{ cat.product_count }} products)"
+            href="{% url 'catalog:product_list' %}{% if search_query %}?q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+            class="category-pill {% if not current_category %}active{% endif %}"
+            aria-label="View all categories"
           >
-            <span>{{ cat.name }}</span>
-            <span class="category-pill-count">{{ cat.product_count }}</span>
+            <span>All Categories</span>
           </a>
-        {% endfor %}
+          {% for cat in categories %}
+            <a
+              href="{% url 'catalog:product_list_by_category' category_slug=cat.slug %}{% if search_query %}?q={{ search_query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+              class="category-pill {% if current_category and current_category.slug == cat.slug %}active{% endif %}"
+              aria-label="Filter by {{ cat.name }} ({{ cat.product_count }} products)"
+            >
+              <span>{{ cat.name }}</span>
+              <span class="category-pill-count">{{ cat.product_count }}</span>
+            </a>
+          {% endfor %}
+        </div>
       </div>
     {% endif %}
   </section>
 
-  <!-- Product Grid -->
+  <!-- Product Grid (4:5 Aspect Ratio, Generous Gutters, Responsive) -->
   {% if products %}
-    <section class="catalog-grid" aria-label="Product listings">
+    <section class="product-grid" aria-label="Product listings">
       {% for product in products %}
-        <article class="product-card" id="product-card-{{ product.pk }}">
+        <article class="product-card reveal-on-scroll" id="product-card-{{ product.pk }}">
           
-          <!-- Media Showcase with Badges -->
+          <!-- Media Showcase (4:5 Aspect Ratio with Secondary Image Crossfade) -->
           <div class="product-card-media">
-            <div class="product-badge-group">
-              {% if product.featured %}
-                <span class="badge-featured" title="Featured product">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            <a href="{{ product.get_absolute_url }}" class="product-card-media-link" aria-label="View details for {{ product.name }}">
+              {% if product.primary_image %}
+                <img
+                  src="{{ product.primary_image.image.url }}"
+                  alt="{{ product.primary_image.alt_text|default:product.name }}"
+                  class="product-card-img primary-img"
+                  loading="lazy"
+                >
+                {% if product.images.all|length > 1 %}
+                  <img
+                    src="{{ product.images.all.1.image.url }}"
+                    alt="{{ product.images.all.1.alt_text|default:product.name }}"
+                    class="product-card-img hover-img"
+                    loading="lazy"
+                  >
+                {% endif %}
+              {% else %}
+                <div class="product-card-placeholder" aria-hidden="true">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
                   </svg>
-                  Featured
-                </span>
+                  <span class="u-text-xs">No image available</span>
+                </div>
               {% endif %}
-              {% if not product.is_in_stock %}
-                <span class="badge badge-error">Out of Stock</span>
-              {% endif %}
-            </div>
+            </a>
 
-            {% if product.primary_image %}
-              <img
-                src="{{ product.primary_image.image.url }}"
-                alt="{{ product.primary_image.alt_text|default:product.name }}"
-                class="product-card-img"
-                loading="lazy"
-              >
-            {% else %}
-              <div class="product-card-placeholder" aria-hidden="true">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                  <circle cx="9" cy="9" r="2"></circle>
-                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                </svg>
-                <span class="u-text-xs">No image available</span>
-              </div>
+            <!-- Restrained Stock / Status Badges (Low stock or out of stock only) -->
+            {% if not product.is_in_stock %}
+              <span class="badge badge-error product-card-badge">Out of Stock</span>
+            {% elif product.stock <= 3 %}
+              <span class="badge badge-warning product-card-badge">Only {{ product.stock }} left</span>
+            {% endif %}
+
+            <!-- Quick-Add Button (Hover on desktop, persistent touch on mobile) -->
+            {% if product.is_in_stock %}
+              <form method="post" action="{% url 'cart:cart_add' product.id %}" class="quick-add-form" data-product-id="{{ product.id }}">
+                {% csrf_token %}
+                <input type="hidden" name="quantity" value="1">
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="quick-add-btn" aria-label="Quick add {{ product.name }} to cart">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span>Add to Cart</span>
+                </button>
+              </form>
             {% endif %}
           </div>
 
-          <!-- Product Details -->
+          <!-- Product Details Body -->
           <div class="product-card-body">
-            <a href="{% url 'catalog:product_list_by_category' category_slug=product.category.slug %}" class="product-card-category">
+            <span class="product-card-category">
               {{ product.category.name }}
-            </a>
+            </span>
 
             <h2 class="product-card-title">
               <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
@@ -181,7 +212,7 @@
               <p class="product-card-desc">{{ product.description }}</p>
             {% endif %}
 
-            <div class="product-card-meta">
+            <div class="product-card-price-row">
               <span class="product-card-price">${{ product.price }}</span>
               <span class="product-card-sku">SKU: {{ product.sku }}</span>
             </div>
@@ -199,7 +230,7 @@
 
     <!-- Accessible Pagination -->
     {% if is_paginated %}
-      <nav class="pagination-nav" aria-label="Product catalog pagination">
+      <nav class="pagination-nav reveal-on-scroll" aria-label="Product catalog pagination">
         <ul class="pagination-list">
           {% if page_obj.has_previous %}
             <li class="pagination-item">
@@ -255,24 +286,26 @@
     {% endif %}
 
   {% else %}
-    <!-- Empty State -->
-    <div class="catalog-empty-state">
-      <svg class="catalog-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        <line x1="8" y1="11" x2="14" y2="11"></line>
-      </svg>
-      <h2 class="catalog-empty-title">No products found</h2>
+    <!-- Designed Empty State (No Products Found) -->
+    <div class="catalog-empty-state reveal-on-scroll" role="region" aria-label="Catalog search empty notice">
+      <div class="catalog-empty-icon-wrap" aria-hidden="true">
+        <svg class="catalog-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+      </div>
+      <h2 class="catalog-empty-title">No matching pieces discovered</h2>
       <p class="catalog-empty-desc">
         {% if search_query %}
-          We couldn't find any products matching &ldquo;{{ search_query }}&rdquo;. Try searching for different keywords or clear your active filters.
+          We couldn't find any objects matching &ldquo;{{ search_query }}&rdquo;. Try searching for different keywords, adjusting your criteria, or clearing active filters.
         {% elif current_category %}
-          There are currently no active products in this category. Check back soon!
+          There are currently no active pieces cataloged under {{ current_category.name }}.
         {% else %}
-          The product catalog is currently being updated. Please check back later.
+          The product archive is currently being updated with new acquisitions. Please check back shortly.
         {% endif %}
       </p>
-      <a href="{% url 'catalog:product_list' %}" class="btn btn-primary" aria-label="Browse all products">
+      <a href="{% url 'catalog:product_list' %}" class="btn btn-primary" aria-label="Clear filters and browse all products">
         <span class="btn-label">Browse All Products</span>
       </a>
     </div>

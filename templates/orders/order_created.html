@@ -6,6 +6,38 @@
 {% block content %}
 <div class="order-confirmation-container">
 
+  <!-- Checkout Stepper Progress -->
+  <nav class="checkout-stepper no-print" aria-label="Checkout Progress">
+    <ol class="stepper-list">
+      <li class="stepper-step stepper-done">
+        <span class="stepper-bubble">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="stepper-title">Cart</span>
+      </li>
+      <li class="stepper-sep" aria-hidden="true"></li>
+      <li class="stepper-step stepper-done">
+        <span class="stepper-bubble">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="stepper-title">Checkout</span>
+      </li>
+      <li class="stepper-sep" aria-hidden="true"></li>
+      <li class="stepper-step stepper-active" aria-current="step">
+        <span class="stepper-bubble">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </span>
+        <span class="stepper-title">Confirmation</span>
+      </li>
+    </ol>
+  </nav>
+
   <!-- Success Header Hero -->
   <div class="confirmation-hero-card">
     <div class="confirmation-icon-wrap" aria-hidden="true">

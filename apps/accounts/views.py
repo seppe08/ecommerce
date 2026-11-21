@@ -4,11 +4,14 @@ from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count, Q
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
+
+from apps.catalog.models import Category, Product
 
 from .forms import (
     CustomLoginForm,
@@ -294,13 +297,28 @@ class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
 
 class HomeView(TemplateView):
     """
-    Landing and dashboard page showcasing the cohesive design system,
-    theme switcher, logged-in status, and platform controls.
+    Landing and dashboard page showcasing the editorial retail storefront,
+    featured collections, category navigation, and logged-in member status.
     """
 
     template_name = "home.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Home & Dashboard | Modern E-Commerce"
+        context["page_title"] = "AuraStore — Modern Living & Editorial Storefront"
+        featured = (
+            Product.objects.filter(is_active=True, featured=True)
+            .select_related("category")
+            .prefetch_related("images")[:8]
+        )
+        if not featured.exists():
+            featured = (
+                Product.objects.filter(is_active=True)
+                .select_related("category")
+                .prefetch_related("images")[:8]
+            )
+        context["featured_products"] = featured
+        context["categories"] = Category.objects.filter(is_active=True).annotate(
+            product_count=Count("products", filter=Q(products__is_active=True))
+        )
         return context

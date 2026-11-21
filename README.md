@@ -6,11 +6,13 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 
 ## 🌟 Key Highlights
 
-- **Product Catalog & Category Exploration:** Browse comprehensive product offerings with real-time category filtering, SKU and keyword search, sorting (price, newest, name), and stock status indicators.
-- **Rich Multi-Image Gallery Showcase:** Interactive product detail views with multi-image thumbnail galleries, specification grids, quantity selection, and related product recommendations.
-- **Session-Backed Shopping Cart Engine:** Fast, zero-database-overhead cart persistence supporting item quantities, line totals, stock boundary clamping, and global context processor badge updates.
+- **Calm, Editorial Storefront UI/UX:** Premium, neutral-first retail experience putting product photography first. Loaded Google Fonts `Fraunces` serif alongside `Plus Jakarta Sans`, fluid typography scaling with `clamp()`, 4:5 image aspect ratios, secondary hover image crossfade, and AJAX quick-add actions.
+- **Product Catalog & Category Exploration:** Browse comprehensive product offerings with real-time category filtering, SKU and keyword search, sorting (price, newest, name), horizontally scrollable chips with scroll-snap on mobile, and designed empty states.
+- **Rich Multi-Image Gallery Showcase:** Interactive product detail views with pure CSS click-to-zoom (`scale(1.6)`), multi-image thumbnail switcher, sticky gallery and sticky buy box with quantity stepper, tabbed specifications, and related product rail.
+- **Session-Backed Shopping Cart Engine:** Fast, zero-database-overhead cart persistence supporting item quantities, line totals, stock boundary clamping, and dynamic cart counter bump animations.
+- **Multi-Step Checkout & Stepper Flow:** Streamlined checkout with a 3-step progress stepper (`Cart → Checkout → Confirmation`), responsive 2-column layout, sticky order summary on desktop, and collapsible summary toggle on mobile.
 - **Atomic Checkout & Inventory Management:** Concurrency-safe checkout with `select_for_update()` product locking, atomic inventory decrements, and automatic rollback on stock insufficiency.
-- **Customer Portal & Invoice Receipts:** Customer order history dashboard (`/orders/my-orders/`), status filtering, and print-ready invoices (`@media print`) with access control security.
+- **Customer Portal & Invoice Receipts:** Customer order history dashboard (`/orders/my-orders/`), status filtering, and print-ready invoices (`@media print`) rendering `#000000` text with zero backgrounds.
 - **Dual-Identifier Authentication:** Log in seamlessly using either your unique **Username** or verified **Email** address (case-insensitive).
 - **User Registration Flow:** Sign up with unique username/email validation, password policy confirmation, and automatic session login.
 - **User Profile Management:** Authenticated profile dashboard supporting first/last name, phone, date of birth, and avatar image uploads.
@@ -279,12 +281,13 @@ uv run pre-commit run --all-files
 
 ## 🎨 UI/UX Design System & Constitution
 
-All frontend components strictly adhere to [DESIGN_SYSTEM.md](file:///c:/Users/seppe/Projects/ecommerce/DESIGN_SYSTEM.md).
+All frontend templates and components strictly adhere to [DESIGN_SYSTEM.md](file:///c:/Users/seppe/Projects/ecommerce/DESIGN_SYSTEM.md).
 
-- **Typography:** Built on **Plus Jakarta Sans** with a typographic scale from `display-1` (36px, weight 800) to `micro-badge` (12px, weight 700).
-- **Themes:** Semantic CSS custom properties mapped to light and dark palettes.
-- **Transitions:** Standardized cubic transitions (150ms–220ms) for tactile feel.
-- **Touch & Accessibility:** Strict adherence to WCAG 2.1 AA standards.
+- **Calm, Product-First Aesthetic:** Neutral-first UI chrome (warm off-white `#FAF9F6` in light mode; warm charcoal `#0F1012` in dark mode) letting product photography shine without loud startup gradients. Single accent per mode (deep teal `#2B5B5F` in light; muted amber `#D8A65A` in dark).
+- **Typography:** Refined editorial serif **Fraunces** for headlines and display alongside **Plus Jakarta Sans** for body and interface controls. Fluid scaling via CSS `clamp()` and tabular numerals for pricing.
+- **Themes & Zero-FOUC:** Synchronous `<head>` theme resolution, zero flash of wrong theme, and smooth cross-fading mode toggle.
+- **Product Showcase:** Strict 4:5 media aspect ratio, secondary gallery image crossfades on hover, and desktop/mobile quick-add interactions.
+- **Touch & Accessibility:** WCAG 2.1 AA compliance across light and dark themes, touch targets ≥ 44×44px, `:focus-visible` rings, and full `prefers-reduced-motion` compliance.
 
 ---
 

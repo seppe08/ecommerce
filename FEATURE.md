@@ -486,6 +486,72 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
+### 21. Modern Editorial UI/UX Storefront Redesign (Phases 1, 2 & 3)
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Calm, Neutral-First Theme Tokens:** Redesigned color palette to put product photography first. Light theme features warm off-white page (`#FAF9F6`), crisp white surfaces (`#FFFFFF`), neutral text (`#16181D`), and a deep teal accent (`#2B5B5F`, hover `#224A4D`). Dark theme features warm charcoal (`#0F1012`), elevated surfaces (`#16181C`, `#1D2025`), neutral light text (`#F2F0EB`), and muted amber accent (`#D8A65A`).
+  - **Editorial Typography Scale with Fluid Clamp:** Loaded Google Fonts `Fraunces` serif alongside `Plus Jakarta Sans` with `font-display: swap`. Implemented fluid type scale via `clamp()` across hero display, page H1, section H2, and card titles. Enforced tabular numerals for price tags and 65ch max-line-length constraints.
+  - **Global Header & Navigation:** Slimmer solid header with hairline border on scroll (`.header-scrolled`), desktop-inline and mobile-expandable search bar, responsive 44×44px theme toggle, accessible skip link, and shopping cart counter with dynamic bump animation.
+  - **Editorial Storefront Home Page:** Replaced developer-facing showcase cards with a calm editorial hero, curated "Featured Objects" grid with 4:5 image ratio, secondary gallery image hover crossfade, and AJAX quick-add button, followed by category tiles and authentic trust pillars. Maintained personalized authenticated member banner with 100% test assertion compatibility.
+  - **Product Catalog Showcase (Phase 2):** Overhauled `product_list.html` with breadcrumbs, search/sort toolbar, horizontally scrollable category chips with scroll-snap on mobile, responsive 4:5 image grid (2 col mobile, 3 col tablet, 4 col desktop), secondary image hover crossfade, quick-add buttons, and styled zero-result empty state.
+  - **Product Detail Showcase (Phase 2):** Overhauled `product_detail.html` with desktop sticky gallery, pure CSS click-to-zoom (`scale(1.6)` with smooth transition, no CDN library), interactive thumbnail switcher, sticky buy box with quantity stepper, single dominant CTA, reassuring microcopy, accessible 3-tab specifications panel, and related products rail.
+  - **Shopping Cart & Checkout Flow (Phase 3):** Enhanced `cart_detail.html` and `order_create.html` with a clear 3-step progress stepper (`Cart → Checkout → Confirmation`), responsive 2-column layout with sticky summary on desktop, and a mobile-collapsible order summary with smooth toggle on screens ≤ 960px.
+  - **Customer Portal & Printable Invoices (Phase 3):** Refined `order_list.html`, `order_created.html`, and `order_detail.html` with calm editorial headers, status badges, and an updated print stylesheet (`@media print`) rendering clean `#000000` text with zero background fills and hidden chrome.
+  - **Authentication & Account Views (Phase 3):** Refined `login.html`, `register.html`, `profile.html`, and all four password reset step templates (`password_reset_form.html`, `password_reset_done.html`, `password_reset_confirm.html`, `password_reset_complete.html`). Fully eliminated all inline `style="..."` attributes across all templates in the repository, replacing them with semantic CSS classes while strictly preserving all test assertions and element IDs.
+  - **Comprehensive Multi-Column Footer:** Responsive 4-column footer providing clear navigation across Collections, Customer Care, Member Accounts, and brand commitments.
+  - **CSS Architecture & Standards:** Added `.u-sr-only` definition, removed hard-coded hex in select arrow tokens using CSS custom properties, deduplicated `.form-grid-2`, and defined utility classes (`btn-lg`, `btn-outline`, `badge-primary`, `badge-error`, `text-primary`, `text-success`, `form-helper`, `optional-mark`, `invoice-actions`, `badge-info`, `auth-callout-box`, `status-icon-centered`, `summary-mobile-toggle`).
+- **Key Files:**
+  - `DESIGN_SYSTEM.md`
+  - `templates/base.html`
+  - `templates/home.html`
+  - `templates/catalog/product_list.html`
+  - `templates/catalog/product_detail.html`
+  - `templates/cart/cart_detail.html`
+  - `templates/orders/order_create.html`
+  - `templates/orders/order_created.html`
+  - `templates/orders/order_detail.html`
+  - `templates/orders/order_list.html`
+  - `templates/accounts/login.html`
+  - `templates/accounts/register.html`
+  - `templates/accounts/profile.html`
+  - `templates/accounts/password_reset_form.html`
+  - `templates/accounts/password_reset_done.html`
+  - `templates/accounts/password_reset_confirm.html`
+  - `templates/accounts/password_reset_complete.html`
+  - `static/css/theme.css`
+  - `static/js/theme.js`
+  - `apps/accounts/views.py`
+  - `CHANGELOG.md`
+- **Verification:**
+  - `uv run python manage.py test` passed 105/105 tests (100% pass rate).
+  - `uv run ruff check .` passed with 0 errors.
+
+---
+
+### 16. Comprehensive Dark & Light Theme Contrast & Cross-Theme Legibility Fixes
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Full Contrast & Invisibility Audit:** Diagnosed and corrected critical text and component contrast issues in both Light and Dark modes.
+  - **Auth Showcase Column Resolution:** Replaced undefined/transparent background fallbacks and improper `--text-inverse` assignments in `.auth-showcase` (which previously produced 100% invisible white-on-white text in Light mode and near-black on dark charcoal in Dark mode). Configured rich Deep Teal gradient (`#1A3E42` to `#2B5B5F`) with crisp `#FFFFFF` text in Light mode, and elevated charcoal (`#1D2025`) with crisp `#F2F0EB` text and muted amber (`#D8A65A`) accents in Dark mode.
+  - **Native Button Reset & Icon Box Elimination:** Fixed browser-default `buttonface` light-grey bevel styling on `.password-toggle-btn` and header `.search-toggle-btn` by applying a universal button reset (`background: transparent; border: none; padding: 0; color: inherit;`) and explicit styles on action buttons.
+  - **Desktop vs Mobile Search Button Visibility:** Corrected cascade specificity where `.header-action-btn` was overriding `.search-toggle-btn { display: none; }` on desktop viewports, properly hiding the mobile search toggle on desktop while keeping it active on mobile (`<= 640px`).
+  - **Token Architecture & Contrast Unification:** Defined missing `--font-display`, `--primary-contrast`, and `--primary-gradient` across `:root` and `[data-theme="dark"]`. Replaced problematic uses of `var(--text-inverse)` on checkboxes, badges, and filter pills with `var(--primary-contrast)`, guaranteeing WCAG 2.1 AA compliance across both themes.
+  - **Form Label Contrast Upgrade:** Promoted `.form-label` to `color: var(--text-primary); font-weight: 600;` for immediate visual prominence.
+- **Key Files:**
+  - `static/css/theme.css`
+  - `templates/base.html`
+  - `DESIGN_SYSTEM.md`
+  - `FEATURE.md`
+  - `README.md`
+  - `CHANGELOG.md`
+- **Verification:**
+  - `uv run python manage.py test` passed 105/105 tests with zero regressions.
+  - `uv run ruff check .` passed with 0 errors.
+
+---
+
 ## 🔮 Planned / Upcoming Features
 
 - [x] **User Registration / Sign Up Flow:** Form with password validation and unique email verification.
