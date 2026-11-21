@@ -321,7 +321,52 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 17. GitOps Automation, CI/CD Pipelines & Repository Standardization
+### 17. Defense-in-Depth Security Hardening, File Upload Protection & Modern Security Headers
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Deployment Security Hardening:**
+    - Configured production-grade security settings in `core/settings.py` backed by environment variable overrides (`django-environ`).
+    - Configured `SECURE_SSL_REDIRECT = env.bool('SECURE_SSL_REDIRECT', default=False)`.
+    - Enforced HTTP Strict Transport Security (HSTS): `SECURE_HSTS_SECONDS = env.int('SECURE_HSTS_SECONDS', default=31536000 if not DEBUG else 0)`, `SECURE_HSTS_INCLUDE_SUBDOMAINS = True`, and `SECURE_HSTS_PRELOAD = True`.
+    - Enforced secure session and CSRF cookie flags: `SESSION_COOKIE_SECURE = env.bool('SESSION_COOKIE_SECURE', default=not DEBUG)` and `CSRF_COOKIE_SECURE = env.bool('CSRF_COOKIE_SECURE', default=not DEBUG)`.
+    - Restricted session cookie script access via `SESSION_COOKIE_HTTPONLY = True` and preserved frontend compatibility with `CSRF_COOKIE_HTTPONLY = False`.
+    - Protected against cross-site request forgery attacks with `SESSION_COOKIE_SAMESITE = 'Lax'` and `CSRF_COOKIE_SAMESITE = 'Lax'`.
+    - Enabled content sniffing prevention `SECURE_CONTENT_TYPE_NOSNIFF = True`, cross-site scripting filter `SECURE_BROWSER_XSS_FILTER = True`, and clickjacking defense `X_FRAME_OPTIONS = 'DENY'`.
+  - **Modern Security Headers Middleware:**
+    - Engineered `core.middleware.SecurityHeadersMiddleware` and registered it in `MIDDLEWARE`.
+    - Attached defense-in-depth headers on all HTTP responses:
+      - `Content-Security-Policy`: Restricts scripts, styles, fonts, and connects, while permitting designated Google Fonts origins (`fonts.googleapis.com`, `fonts.gstatic.com`) and blocking framing via `frame-ancestors 'none'`.
+      - `Referrer-Policy`: Strict policy (`strict-origin-when-cross-origin`) to safeguard user privacy across navigations.
+      - `Permissions-Policy`: Restricts browser hardware access (`camera=(), microphone=(), geolocation=(), payment=(), usb=()`).
+  - **Avatar File Upload Sanitization & Hardening:**
+    - Hardened `UserProfileForm.clean_profile_picture` in `apps/accounts/forms.py`.
+    - Enforced maximum avatar file size ceiling of 5MB (`5 * 1024 * 1024` bytes).
+    - Whitelisted valid image extensions strictly to `.jpg`, `.jpeg`, `.png`, and `.webp`.
+    - Implemented binary header inspection and integrity checks using Pillow (`Image.open()` and `verify()`), proactively rejecting dangerous payloads including disguised SVG XSS vectors, scripts, executables, and corrupted files.
+    - Implemented file stream rewind (`seek(0)`) to maintain clean storage persistence.
+  - **Open-Redirect Defenses:**
+    - Verified and tested `CustomLoginView` and `RegisterView` redirect parameters against `url_has_allowed_host_and_scheme()`. Untrusted external domains or arbitrary schemes are discarded in favor of default internal landing routes.
+  - **Security Documentation & Policies:**
+    - Created comprehensive `SECURITY.md` detailing supported versions, vulnerability disclosure SLA and protocol, architecture defenses, and testing procedures.
+  - **Automated Verification:**
+    - Created 23 automated tests in `apps/accounts/tests_security.py` verifying headers, secure cookies, upload boundaries, format validation, and open-redirect defenses.
+    - Verified all 76 tests in the workspace pass (`uv run python manage.py test apps.accounts apps.catalog`).
+    - Verified deploy check passes with zero warnings (`uv run python manage.py check --deploy`).
+    - Verified Ruff linter clean pass (`uv run ruff check .`).
+- **Key Files:**
+  - `core/settings.py`
+  - `core/middleware.py`
+  - `apps/accounts/forms.py`
+  - `apps/accounts/tests_security.py`
+  - `SECURITY.md`
+  - `.env.example`
+  - `README.md`
+  - `FEATURE.md`
+
+---
+
+### 18. GitOps Automation, CI/CD Pipelines & Repository Standardization
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -353,5 +398,6 @@ Whenever a feature, module, or enhancement is successfully implemented:
 - [x] **Password Reset / Recovery Flow:** Email-based token recovery workflow.
 - [x] **User Profile Management:** Edit personal info, upload avatar image, update phone number.
 - [x] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering.
+- [x] **Enterprise Security Hardening & Defenses:** Headers (CSP, Referrer, Permissions), upload sanitization, HSTS, secure cookies.
 - [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
 - [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).

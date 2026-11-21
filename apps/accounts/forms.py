@@ -1,9 +1,13 @@
+import os
+
 from django import forms
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import UploadedFile
 from django.db.models import Q
+from PIL import Image
 
 UserModel = get_user_model()
 
@@ -369,6 +373,53 @@ class UserProfileForm(forms.ModelForm):
                     code="invalid_phone",
                 )
         return phone
+
+    def clean_profile_picture(self):
+        picture = self.cleaned_data.get("profile_picture")
+        if not picture or not isinstance(picture, UploadedFile):
+            return picture
+
+        # 1. Enforce maximum avatar file size (5MB)
+        max_size = 5 * 1024 * 1024
+        if picture.size > max_size:
+            raise ValidationError(
+                "Profile picture size cannot exceed 5MB. Please upload a smaller image.",
+                code="max_file_size",
+            )
+
+        # 2. Validate image format/extension (JPEG, PNG, WebP)
+        allowed_extensions = {".jpg", ".jpeg", ".png", ".webp"}
+        ext = os.path.splitext(picture.name)[1].lower()
+        if ext not in allowed_extensions:
+            raise ValidationError(
+                f"Unsupported file format '{ext}'. Only JPEG, PNG, and WebP images are allowed.",
+                code="invalid_extension",
+            )
+
+        # 3. Verify image header and integrity with PIL to reject dangerous files (SVG XSS, scripts, executable payloads)
+        allowed_formats = {"JPEG", "PNG", "WEBP"}
+        try:
+            picture.seek(0)
+            image = Image.open(picture)
+            img_format = image.format
+            image.verify()
+
+            if img_format not in allowed_formats:
+                raise ValidationError(
+                    f"Unsupported image type '{img_format}'. Only JPEG, PNG, and WebP images are allowed.",
+                    code="invalid_format",
+                )
+        except ValidationError:
+            raise
+        except Exception as exc:
+            raise ValidationError(
+                "Upload a valid image. The file you uploaded was either not an image or a corrupted image.",
+                code="corrupted_image",
+            ) from exc
+        finally:
+            picture.seek(0)
+
+        return picture
 
 
 class CustomPasswordResetForm(PasswordResetForm):
