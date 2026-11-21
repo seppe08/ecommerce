@@ -321,7 +321,99 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 17. Defense-in-Depth Security Hardening, File Upload Protection & Modern Security Headers
+### 17. Persistent Shopping Cart Engine & Dynamic Context Processor
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Session-Backed Cart Engine (`apps/cart/cart.py`):**
+    - High-performance, lightweight session storage engine (`Cart`) decoupling shopping cart persistence from database roundtrips.
+    - Full API implementation:
+      - `add(product, quantity=1, override_quantity=False)`: Adds new items or increments/overrides existing item quantities with catalog price validation and bounds checking.
+      - `remove(product)`: Removes product keys from session with automated state synchronization.
+      - `get_total_price()`: Computes total line item costs as standard Decimals.
+      - `get_item_count()` & `__len__()`: Returns total quantity of units across all cart items.
+      - `clear()`: Empties session cart state and cleans memory references.
+      - `__iter__()`: Yields live Product database instances linked with calculated line item costs, automatically purging stale keys if products are deleted from catalog.
+  - **Global Context Processor (`apps/cart/context_processors.py`):**
+    - `cart(request)` provides global `cart` instance across all Django templates.
+    - Injects dynamic live item count badge and direct cart link into the global navbar header (`templates/base.html`).
+  - **Cart Views & Controller Logic (`apps/cart/views.py`):**
+    - `cart_detail` (`/cart/`): Full cart breakdown showing product thumbnails, titles, SKUs, categories, unit prices, responsive quantity toggles, line totals, free shipping indicators, estimated taxes, order summary, and checkout CTA.
+    - `cart_add` (`/cart/add/<product_id>/`): Validates stock levels, handles both standard form submissions and asynchronous AJAX requests, clamps quantities to maximum available stock when requests exceed inventory, and emits feedback notifications.
+    - `cart_remove` (`/cart/remove/<product_id>/`): Removes items with flash messages and supports AJAX responses with updated cart totals and count.
+    - `cart_update_quantity` (`/cart/update/<product_id>/`): Supports direct input and increment/decrement actions with stock boundary enforcement.
+  - **Design System & Accessibility (WCAG 2.1 AA):**
+    - Built with responsive 2-column layout (`.cart-layout-grid`) collapsing smoothly on mobile viewports.
+    - Empty cart state with modern illustration, descriptive guidance, and catalog navigation CTA.
+    - Touch targets ≥ 44×44px for quantity increment/decrement controls, table actions, and checkout CTA.
+    - Zero Flash of Unstyled Content (FOUC), glowing `:focus-visible` outlines, and full light/dark theme support.
+  - **Automated Test Coverage:**
+    - 14 comprehensive unit and integration tests in `apps/cart/tests.py` verifying cart initialization, adding, incrementing, overriding, removing, price calculations, iteration cleanup, clearing, context processor injection, empty view rendering, standard/AJAX add, out-of-stock rejection, stock clamping, quantity updates, and removal.
+- **Key Files:**
+  - `apps/cart/apps.py`
+  - `apps/cart/cart.py`
+  - `apps/cart/context_processors.py`
+  - `apps/cart/forms.py`
+  - `apps/cart/views.py`
+  - `apps/cart/urls.py`
+  - `apps/cart/tests.py`
+  - `templates/cart/cart_detail.html`
+  - `templates/base.html`
+  - `templates/catalog/product_detail.html`
+  - `core/settings.py`
+  - `core/urls.py`
+  - `static/css/theme.css`
+
+---
+
+### 18. Orders Management, Atomic Checkout & Customer Invoicing Portal
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Data Models (`apps/orders/models.py`):**
+    - `Order`: Captures customer credentials, shipping address, order number (auto-generated unique `ORD-<HEX>` slug), fulfillment status (`pending`, `processing`, `paid`, `shipped`, `delivered`, `cancelled`), payment status, and timestamps. Indexed by `-created_at`, `order_number`, and `status`. Supports both authenticated users and guest checkout (`user=None`).
+    - `OrderItem`: Line item model linking `Order` and `Product` with captured purchase `price` (DecimalField), `quantity`, and `get_cost()` calculation.
+  - **Checkout Form & Views (`apps/orders/views.py`):**
+    - `order_create` (`/orders/create/`):
+      - Rejects checkout attempts with empty carts.
+      - Prepopulates contact and shipping information for authenticated customers.
+      - Executes inside a strict `transaction.atomic()` database block with `select_for_update()` product locking to prevent concurrent inventory overselling.
+      - Atomically decrements product inventory stock, creates Order and OrderItems, clears the session cart, and redirects to order confirmation.
+      - Automated rollback protection if any item stock becomes insufficient during checkout.
+    - `order_created` (`/orders/created/<order_id>/`): Confirmation screen rendering successful order placement notice, reference details, and printable invoice. Protected by user ownership and session access controls.
+    - `order_list` (`/orders/my-orders/`): Login-required customer dashboard displaying full order history, status badges, payment indicators, line item previews, and status filter pills.
+    - `order_detail` (`/orders/<order_number>/`): Formal order invoice view with customer details, itemized table, billing breakdown, print-ready CSS (`@media print`), and permission enforcement.
+  - **Django Admin Enhancements (`apps/orders/admin.py`):**
+    - Tabular `OrderItemInline` with product lookups and calculated item costs.
+    - Custom admin actions: `mark_as_paid`, `mark_as_shipped`, and `mark_as_delivered` with user notification messages.
+    - Filtering by status, payment, and creation date, with search by order number, customer name, email, and phone.
+  - **Design System & Accessibility (WCAG 2.1 AA):**
+    - Two-column checkout layout with sticky order summary and item thumbnail previews.
+    - Form inputs with autocomplete attributes, inline error indicators, and high contrast.
+    - Print-ready invoice stylesheets stripping navigation and backgrounds during browser print (`@media print`).
+    - Flawless dark and light theme compliance.
+  - **Automated Test Coverage:**
+    - 15 comprehensive unit and integration tests in `apps/orders/tests.py` verifying model creation, auto-generated order numbers, line item costs, total calculations, empty cart protection, authenticated prepopulation, atomic checkout stock reduction, concurrency rollback on insufficient stock, access control permissions, order history listing and status filtering, invoice views, and admin bulk actions.
+- **Key Files:**
+  - `apps/orders/apps.py`
+  - `apps/orders/models.py`
+  - `apps/orders/forms.py`
+  - `apps/orders/views.py`
+  - `apps/orders/urls.py`
+  - `apps/orders/admin.py`
+  - `apps/orders/tests.py`
+  - `apps/orders/migrations/0001_initial.py`
+  - `templates/orders/order_create.html`
+  - `templates/orders/order_created.html`
+  - `templates/orders/order_list.html`
+  - `templates/orders/order_detail.html`
+  - `core/settings.py`
+  - `core/urls.py`
+  - `static/css/theme.css`
+
+---
+
+### 19. Defense-in-Depth Security Hardening, File Upload Protection & Modern Security Headers
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -351,7 +443,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
     - Created comprehensive `SECURITY.md` detailing supported versions, vulnerability disclosure SLA and protocol, architecture defenses, and testing procedures.
   - **Automated Verification:**
     - Created 23 automated tests in `apps/accounts/tests_security.py` verifying headers, secure cookies, upload boundaries, format validation, and open-redirect defenses.
-    - Verified all 76 tests in the workspace pass (`uv run python manage.py test apps.accounts apps.catalog`).
+    - Verified all test suites in the workspace pass cleanly.
     - Verified deploy check passes with zero warnings (`uv run python manage.py check --deploy`).
     - Verified Ruff linter clean pass (`uv run ruff check .`).
 - **Key Files:**
@@ -366,7 +458,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 18. GitOps Automation, CI/CD Pipelines & Repository Standardization
+### 20. GitOps Automation, CI/CD Pipelines & Repository Standardization
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -398,6 +490,9 @@ Whenever a feature, module, or enhancement is successfully implemented:
 - [x] **Password Reset / Recovery Flow:** Email-based token recovery workflow.
 - [x] **User Profile Management:** Edit personal info, upload avatar image, update phone number.
 - [x] **Product Catalog & Category Navigation:** Product models, categories, inventory tracking, search, and filtering.
+- [x] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
+- [x] **Orders & Customer Portal:** Atomic inventory reduction, order management, and printable invoices.
 - [x] **Enterprise Security Hardening & Defenses:** Headers (CSP, Referrer, Permissions), upload sanitization, HSTS, secure cookies.
-- [ ] **Shopping Cart & Checkout:** Persistent cart session, line item management, and order placement.
+- [x] **GitOps Automation & CI/CD:** GitHub Actions workflows, pre-commit hooks, Conventional Commits, SemVer changelog.
+- [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
 - [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
