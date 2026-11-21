@@ -13,11 +13,11 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **User Profile Management:** Authenticated profile dashboard supporting first/last name, phone, date of birth, and avatar image uploads.
 - **Password Reset & Recovery:** Full 4-step secure password recovery workflow via email tokens, custom forms, and accessible reset views.
 - **Zero-FOUC Dark & Light Modes:** Synchronous theme resolution in `<head>` prevents any flash of unstyled color; persists preferences via `localStorage` with OS-level fallback.
-- **Enterprise-Grade Security:** Timing attack resistance, open-redirect mitigation, granular error handling without credential leaking, and safe session expiration handling.
+- **Enterprise-Grade Security Hardening:** Comprehensive defense-in-depth including environment-controlled HSTS, secure cookies (`HttpOnly`, `SameSite=Lax`, `Secure`), Content-Security-Policy (CSP), `Referrer-Policy`, `Permissions-Policy`, clickjacking defense (`DENY`), avatar file upload boundaries (5MB limit, JPEG/PNG/WebP format & PIL header verification), and strict open-redirect mitigation.
 - **Session Flexibility:** 30-day persistent session support via "Remember Me", or secure browser-close expiry.
 - **High-Empathy UI/UX:** Inline field-anchored errors, live loading spinner states on submission to prevent double clicks, and accessible password visibility toggles.
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
-- **100% Automated Test Suite:** 53 comprehensive unit and integration tests covering the complete authentication, registration, profile management, password recovery, product catalog, categories, gallery, and security lifecycle.
+- **100% Automated Test Suite:** 76 comprehensive unit, integration, and security tests covering authentication, registration, profile management, password recovery, product catalog, categories, gallery, security headers, file upload boundaries, and open-redirect defenses.
 
 ---
 
@@ -48,7 +48,8 @@ ecommerce/
 │   │   ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
 │   │   ├── forms.py            # CustomLoginForm, CustomRegistrationForm, UserProfileForm, CustomPasswordResetForm, CustomSetPasswordForm
 │   │   ├── models.py           # CustomUser model (AbstractUser)
-│   │   ├── tests.py            # Comprehensive 30-case test suite
+│   │   ├── tests.py            # Comprehensive 30-case accounts & auth test suite
+│   │   ├── tests_security.py   # Comprehensive 23-case automated security test suite
 │   │   ├── urls.py             # App URL patterns (login, logout, register, profile, password reset)
 │   │   └── views.py            # CustomLoginView, CustomLogoutView, RegisterView, ProfileView, HomeView, Password Reset Views
 │   └── catalog/                # Product catalog & categories app
@@ -61,6 +62,7 @@ ecommerce/
 │       └── views.py            # ProductListView, ProductDetailView
 ├── core/
 │   ├── asgi.py                 # ASGI configuration
+│   ├── middleware.py           # SecurityHeadersMiddleware (CSP, Referrer-Policy, Permissions-Policy)
 │   ├── settings.py             # Django project settings & database configuration
 │   ├── urls.py                 # Root URL router
 │   └── wsgi.py                 # WSGI application entrypoint
@@ -93,6 +95,7 @@ ecommerce/
 ├── GEMINI.md                   # Workspace agent guidelines & mandatory update protocols
 ├── manage.py                   # Django CLI utility
 ├── pyproject.toml              # Project dependencies & tool configurations
+├── SECURITY.md                 # Vulnerability disclosure process & defense architecture
 └── uv.lock                     # Pinned deterministic dependency lockfile
 ```
 
@@ -179,15 +182,21 @@ Visit `http://127.0.0.1:8000/` in your browser.
 Execute the comprehensive test suites:
 ```bash
 # Test the Product Catalog app (23 test cases)
-$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.catalog
+uv run python manage.py test apps.catalog
 
-# Test the Accounts & Auth app (30 test cases)
-$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts
+# Test the Accounts & Auth app (53 test cases including security suite)
+uv run python manage.py test apps.accounts
 
-# Run all test suites across the project (53 test cases)
-$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.accounts apps.catalog
+# Test the Security Hardening suite specifically (23 test cases)
+uv run python manage.py test apps.accounts.tests_security
+
+# Run all test suites across the project (76 test cases)
+uv run python manage.py test apps.accounts apps.catalog
+
+# Run deployment security audit
+uv run python manage.py check --deploy
 ```
-*All 53 unit and integration tests across accounts and catalog will execute.*
+*All 76 unit, integration, and security tests across accounts, auth, catalog, and defensive controls will execute.*
 
 ### Code Quality & Linter
 Run `Ruff` to verify code standards:
