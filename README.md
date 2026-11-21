@@ -41,6 +41,8 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 | **Image Processing**| `Pillow` | `>= 13.0.0` | Profile and product media processing |
 | **Database Driver** | `psycopg[binary]` | `>= 3.3.9` | High-efficiency PostgreSQL adapter |
 | **Linter / Formatter**| `Ruff` | `>= 0.17.5` | Fast Python linter & code formatter |
+| **Frontend Styling**| `Tailwind CSS v4` | `^4.0.0` | Utility CSS & token architecture via `@tailwindcss/cli` |
+
 
 ---
 
@@ -184,10 +186,28 @@ DB_NAME=ecommerce.sqlite3
 ```
 
 ### 3. Install Dependencies
-Install dependencies with `uv`:
+Install Python dependencies with `uv`:
 ```bash
 uv sync
 ```
+
+### 3.1 Frontend Build Pipeline (Tailwind CSS v4)
+Install frontend build devDependencies:
+```bash
+npm install
+```
+
+Compile the CSS bundle (`static/css/tailwind/input.css` → `static/css/app.css`):
+```bash
+npm run build:css
+```
+
+For real-time development watch mode:
+```bash
+npm run watch:css
+```
+
+> **Note on Deployments:** `static/css/app.css` is committed directly to source control. Production environments and deployment targets do not require Node.js or npm runtime dependencies—standard Python deployment commands (`collectstatic`) function out of the box.
 
 ### 4. Database Setup
 

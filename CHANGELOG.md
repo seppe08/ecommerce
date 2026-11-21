@@ -9,7 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tailwind CSS v4 Build Pipeline (Option A — Server-Rendered Django Proof of Concept):**
+  - Integrated `@tailwindcss/cli` v4 and `tailwindcss` with `package.json` scripts (`build:css` and `watch:css`).
+  - Added single source of truth token mapping in `static/css/tailwind/input.css` using `@theme` referencing existing CSS variables (`--color-page`, `--color-surface`, `--color-subtle`, `--color-ink`, `--color-ink-2`, `--color-ink-3`, `--color-line`, `--color-line-strong`, `--color-accent`, `--color-accent-hover`, `--color-accent-fg`, `--color-success*`, `--color-warning*`, `--color-error*`, `--radius-card`, `--radius-control`, `--font-body`, `--font-editorial`).
+  - Compiled and committed static bundle `static/css/app.css` to allow zero-Node Python-only deployment pipelines.
+  - Created unified, reusable product card template `templates/includes/product_card.html` with 4:5 media aspect ratio, 500ms secondary image hover crossfade, restrained semantic stock badges, desktop hover/focus and touch-persistent quick-add button, clamped description, tabular price, and 44px touch target secondary "View Details" button.
+
 ### Changed
+- **CSS Layer Hierarchy Architecture:** Declared `@layer theme, legacy, components, utilities;` in `input.css` and encapsulated entire legacy `theme.css` in `@layer legacy { ... }` preserving CRLF line endings, allowing Tailwind utilities in `@layer utilities` to override legacy styling without `!important`.
+- **Design Token & Accessibility Contrast Refinements:**
+  - Upgraded `--text-muted` from `#888F9E` (~3.1:1) to `#646B7A` (~4.8:1/5.1:1) in Light mode and `#8E95A2` (~5.7:1) in Dark mode, ensuring full WCAG 2.1 AA compliance for body and meta text across both themes.
+  - Scoped legacy CSS rules: declared legacy custom classes frozen in favor of Tailwind utility classes.
+- **Header "Sign In" Button:** Restyled `.header-signin-btn` using Tailwind utilities (`h-10 px-4 text-sm font-medium rounded-control border border-line-strong bg-surface text-ink hover:bg-subtle transition-colors shrink-0 whitespace-nowrap w-auto`) while preserving required classes and accessible label.
+- **Unified Product Card Adoption:** Replaced duplicated card markup across `templates/catalog/product_list.html`, `templates/home.html`, and `templates/catalog/product_detail.html` with `templates/includes/product_card.html`.
+
+### Removed
+- **Primary Gradient:** Completely removed `--primary-gradient` token from `:root` and `[data-theme="dark"]`, converting `.auth-showcase` to solid Deep Teal to strictly adhere to design system prohibitions on gradients.
+- **Dead Legacy Product Card CSS:** Deleted legacy `.product-card*`, `.quick-add*`, `.product-card-desc/meta/actions`, and mobile/touch card overrides from `static/css/theme.css`.
 - **UI/UX Redesign — Calm, Editorial, Product-First Storefront (Phases 1, 2 & 3):**
   - **Calm Neutral-First Color Palette:** Redesigned light theme to warm off-white (`#FAF9F6`), crisp white surfaces (`#FFFFFF`), neutral text (`#16181D`), and single deep teal accent (`#2B5B5F`, hover `#224A4D`). Redesigned dark theme to warm charcoal (`#0F1012`), elevated surfaces (`#16181C`, `#1D2025`), and muted amber accent (`#D8A65A`). Removed loud violet gradients from buttons and branding.
   - **Fluid Typography Hierarchy:** Integrated Google Fonts `Fraunces` editorial serif for display and section headings alongside `Plus Jakarta Sans` for body/UI controls with fluid `clamp()` type scaling. Added tabular numerals for price display and 65ch max-line-length constraints.

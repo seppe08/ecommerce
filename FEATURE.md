@@ -552,6 +552,47 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
+### 17. Tailwind CSS v4 Build Pipeline & Unified Product Card Component (Proof of Concept)
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Option A Architectural Pattern:** Integrated Tailwind CSS v4 directly with Django server-rendered templates, avoiding client-side React/shadcn complexity while maintaining maximum rendering performance and zero runtime Node requirements.
+  - **Zero-Node Production Deployment:** Added root `package.json` with devDependencies `@tailwindcss/cli` and `tailwindcss`. Configured `npm run build:css` and `npm run watch:css`. Compiles `static/css/tailwind/input.css` into `static/css/app.css` which is committed to source control for native Python-only deployments.
+  - **CSS Layer Architecture:** Declared `@layer theme, legacy, components, utilities;` at the stylesheet top. Fully encapsulated legacy `theme.css` (~4,500 lines) within `@layer legacy { ... }` with strict CRLF line ending preservation, ensuring Tailwind utility classes in `@layer utilities` override legacy rules cleanly without `!important` wars.
+  - **Single Source of Truth Token Mapping:** Configured Tailwind `@theme` in `input.css` referencing existing CSS custom properties (`--color-page`, `--color-surface`, `--color-subtle`, `--color-ink`, `--color-ink-2`, `--color-ink-3`, `--color-line`, `--color-line-strong`, `--color-accent`, `--color-accent-hover`, `--color-accent-fg`, `--color-success*`, `--color-warning*`, `--color-error*`, `--radius-card`, `--radius-control`, `--font-body`, `--font-editorial`). Theme switching between light and dark operates automatically without duplicate `dark:` utility variants.
+  - **Design Token & Contrast Fixes:** Corrected `--text-muted` from `#888F9E` (~3.1:1) to `#646B7A` (~4.8:1/5.1:1) in Light mode and `#8E95A2` (~5.7:1) in Dark mode, strictly fulfilling WCAG AA contrast for body/meta text. Completely excised `--primary-gradient` and converted `.auth-showcase` to solid Deep Teal adhering to `DESIGN_SYSTEM.md` gradient prohibitions.
+  - **Unified Product Card Include:** Deduplicated card markup from `catalog/product_list.html`, `home.html`, and `catalog/product_detail.html` into a single reusable include `templates/includes/product_card.html`.
+    - 4:5 aspect ratio with `aspect-[4/5]`, `bg-subtle`, and 500ms secondary gallery hover crossfade (`hover-img group-hover:opacity-100 motion-reduce:transition-none`).
+    - Restrained semantic stock badges for out of stock and low stock (`<= 3`).
+    - AJAX quick-add button revealed on desktop `group-hover` and `group-focus-within`, persistently visible on touch devices (`[@media(hover:none)]:opacity-100`).
+    - Editorial typography: category uppercase eyebrow (`text-xs text-ink-3`), product title (`text-lg font-semibold text-ink`), clamped description (`line-clamp-2 max-w-prose text-ink-2`), tabular numerals price (`text-xl font-semibold tabular-nums text-ink`), and SKU demoted (`text-xs text-ink-3`).
+    - Full-width secondary "View Details" button with 44px touch target (`h-11 rounded-control border-line-strong hover:bg-subtle`).
+    - Complete cleanup of legacy `.product-card*`, `.quick-add*`, and `.product-card-desc/meta/actions` rules from `theme.css` without dead code.
+  - **Header Sign-In Button Restyle:** Restyled `.header-signin-btn` using Tailwind utilities (`h-10 px-4 text-sm font-medium rounded-control border border-line-strong bg-surface text-ink hover:bg-subtle transition-colors shrink-0 whitespace-nowrap w-auto`) while preserving required classes `header-signin-btn`, `btn-label`, and `aria-label="Sign in"`.
+- **Key Files:**
+  - `package.json`
+  - `.gitignore`
+  - `static/css/tailwind/input.css`
+  - `static/css/app.css`
+  - `static/css/theme.css`
+  - `templates/base.html`
+  - `templates/includes/product_card.html`
+  - `templates/home.html`
+  - `templates/catalog/product_list.html`
+  - `templates/catalog/product_detail.html`
+  - `DESIGN_SYSTEM.md`
+  - `README.md`
+  - `FEATURE.md`
+  - `CHANGELOG.md`
+- **Verification:**
+  - `uv run python manage.py test` passed 105/105 tests (100% pass rate).
+  - `uv run ruff check .` passed with 0 errors.
+  - `npm run build:css` successfully compiled minified `static/css/app.css`.
+  - Content-Security-Policy suite (`apps.accounts.tests_security`) passed 23/23 tests.
+  - Automated browser verification performed at 375px, 768px, and 1280px viewports across Light and Dark themes, verifying AJAX quick-add counter bump, theme toggle, mobile search expansion, and header scroll styling.
+
+---
+
 ## 🔮 Planned / Upcoming Features
 
 - [x] **User Registration / Sign Up Flow:** Form with password validation and unique email verification.

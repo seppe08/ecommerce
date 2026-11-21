@@ -145,72 +145,7 @@
     {% if featured_products %}
       <div class="product-grid" role="region" aria-label="Featured products catalog">
         {% for product in featured_products %}
-          <article class="product-card reveal-on-scroll" id="featured-product-card-{{ product.pk }}">
-            <!-- 4:5 Media Aspect Ratio with Hover Crossfade -->
-            <div class="product-card-media">
-              <a href="{{ product.get_absolute_url }}" class="product-card-media-link" aria-label="View {{ product.name }}">
-                {% if product.primary_image %}
-                  <img
-                    src="{{ product.primary_image.image.url }}"
-                    alt="{{ product.primary_image.alt_text|default:product.name }}"
-                    class="product-card-img primary-img"
-                    loading="lazy"
-                  >
-                  <!-- Secondary Gallery Image for Smooth Hover Crossfade -->
-                  {% if product.images.all|length > 1 %}
-                    <img
-                      src="{{ product.images.all.1.image.url }}"
-                      alt="{{ product.images.all.1.alt_text|default:product.name }}"
-                      class="product-card-img hover-img"
-                      loading="lazy"
-                    >
-                  {% endif %}
-                {% else %}
-                  <div class="product-card-placeholder" aria-hidden="true">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
-                      <circle cx="9" cy="9" r="2"></circle>
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
-                    </svg>
-                  </div>
-                {% endif %}
-              </a>
-
-              <!-- Restrained Stock Badge (Only low stock or out of stock) -->
-              {% if not product.is_in_stock %}
-                <span class="badge badge-error product-card-badge">Out of Stock</span>
-              {% elif product.stock <= 3 %}
-                <span class="badge badge-warning product-card-badge">Only {{ product.stock }} left</span>
-              {% endif %}
-
-              <!-- Quick-Add Button (Appears on hover/focus on desktop; always visible on touch) -->
-              {% if product.is_in_stock %}
-                <form method="post" action="{% url 'cart:cart_add' product.id %}" class="quick-add-form" data-product-id="{{ product.id }}">
-                  {% csrf_token %}
-                  <input type="hidden" name="quantity" value="1">
-                  <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                  <button type="submit" class="quick-add-btn" aria-label="Quick add {{ product.name }} to cart">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    <span>Add to Cart</span>
-                  </button>
-                </form>
-              {% endif %}
-            </div>
-
-            <!-- Product Information -->
-            <div class="product-card-body">
-              <span class="product-card-category">{{ product.category.name }}</span>
-              <h3 class="product-card-title">
-                <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
-              </h3>
-              <div class="product-card-price-row">
-                <span class="product-card-price">${{ product.price }}</span>
-              </div>
-            </div>
-          </article>
+          {% include "includes/product_card.html" with product=product card_prefix="featured-product-card" %}
         {% endfor %}
       </div>
     {% else %}

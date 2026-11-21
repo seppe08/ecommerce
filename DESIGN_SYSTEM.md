@@ -54,7 +54,7 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
   /* Typography - Neutral, high contrast */
   --text-primary: #16181D;
   --text-secondary: #5C6270;
-  --text-muted: #888F9E;
+  --text-muted: #646B7A;
   --text-inverse: #FFFFFF;
 
   /* Brand Accent - Single deep teal accent for Light mode */
@@ -65,7 +65,6 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
   --primary-focus: rgba(43, 91, 95, 0.22);
   --btn-primary-text: #FFFFFF;
   --primary-contrast: #FFFFFF;
-  --primary-gradient: linear-gradient(145deg, #1A3E42 0%, #2B5B5F 100%);
 
   /* Desaturated Semantics */
   --error: #A83A3A;
@@ -139,7 +138,7 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
   /* Typography */
   --text-primary: #F2F0EB;
   --text-secondary: #A8ADB8;
-  --text-muted: #727782;
+  --text-muted: #8E95A2;
   --text-inverse: #0F1012;
 
   /* Brand Accent - Muted amber for Dark mode */
@@ -150,7 +149,6 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
   --primary-focus: rgba(216, 166, 90, 0.25);
   --btn-primary-text: #0F1012;
   --primary-contrast: #0F1012;
-  --primary-gradient: linear-gradient(145deg, #15171B 0%, #1D2026 100%);
 
   /* Desaturated Semantics */
   --error: #E06D6D;
@@ -187,6 +185,50 @@ All colors are exposed through CSS custom properties on `:root` and `[data-theme
   --focus-ring-error: 0 0 0 3px rgba(224, 109, 109, 0.30);
 }
 ```
+
+---
+
+## 2.1 Tailwind CSS Integration & Token Architecture
+
+- **Architecture Choice:** AuraStore uses Tailwind CSS v4 alongside server-rendered Django templates (Option A: no React/shadcn, zero client-side hydration overhead).
+- **CSS Cascade & Layer Hierarchy:**
+  - CSS cascade order is declared explicitly: `@layer theme, legacy, components, utilities;`.
+  - The legacy stylesheet (`static/css/theme.css`) is fully scoped inside `@layer legacy { ... }`.
+  - Tailwind utilities in `@layer utilities` automatically override legacy styles with clean specificity.
+  - Legacy custom CSS classes are **frozen**. Tailwind utilities are the mandatory standard for all new UI components and style modifications.
+- **Single Source of Truth:**
+  - Tailwind tokens in `@theme` directly alias CSS custom properties without duplicating hex values.
+  - Dark mode activates automatically via CSS variable reassignment under `[data-theme="dark"]` / `.dark`. No redundant `dark:` variant duplication is required for tokenized utilities.
+- **Tailwind Design Token Mapping:**
+
+| Tailwind Utility Class | Bound Design System Variable | Purpose |
+| :--- | :--- | :--- |
+| `bg-page`, `text-page` | `var(--bg-page)` | Top-level document background |
+| `bg-surface` | `var(--bg-surface)` | Cards, dialogs, elevated containers |
+| `bg-subtle` | `var(--bg-subtle)` | Media backdrops, hover fills, secondary surfaces |
+| `text-ink` | `var(--text-primary)` | Primary high-contrast body & heading text |
+| `text-ink-2` | `var(--text-secondary)` | Secondary description and muted text |
+| `text-ink-3` | `var(--text-muted)` | Category eyebrows, SKU identifiers (WCAG AA ≥ 4.8:1) |
+| `border-line` | `var(--border-subtle)` | Subtle structural divider and card border |
+| `border-line-strong` | `var(--border-strong)` | Emphasized control border, hover borders |
+| `bg-accent`, `text-accent-fg` | `var(--primary)`, `var(--btn-primary-text)` | Active brand CTA and accent fills |
+| `bg-accent-hover` | `var(--primary-hover)` | Interactive hover state for accent controls |
+| `bg-success-bg`, `text-success-text` | `var(--success-bg)`, `var(--success-text)` | Positive notifications and badges |
+| `bg-warning-bg`, `text-warning-text` | `var(--warning-bg)`, `var(--warning-text)` | Low inventory alerts ("Only X left") |
+| `bg-error-bg`, `text-error-text` | `var(--error-bg)`, `var(--error-text)` | Out of stock warnings and form errors |
+| `rounded-card` | `var(--radius-lg)` (12px) | Standard showcase card rounding |
+| `rounded-control` | `var(--radius-md)` (8px) | Interactive buttons, inputs, form controls |
+| `font-body` | `var(--font-sans)` | Plus Jakarta Sans UI type |
+| `font-editorial` | `var(--font-serif)` | Fraunces editorial display serif |
+
+- **Unified Product Card Specification:**
+  - Component template: `templates/includes/product_card.html`.
+  - Media: Aspect ratio `4:5` (`aspect-[4/5]`), `rounded-card`, `bg-subtle`, with smooth 500ms secondary image hover crossfade (`hover-img group-hover:opacity-100 motion-reduce:transition-none`).
+  - Stock badge: Restrained strictly to low stock (`<= 3`, `bg-warning-bg text-warning-text`) and out of stock (`bg-error-bg text-error-text`).
+  - Quick-add: Desktop hover/focus-revealed (`group-hover:opacity-100 group-focus-within:opacity-100`), persistently visible on touch devices (`[@media(hover:none)]:opacity-100`).
+  - Body: Uppercase category eyebrow (`text-xs text-ink-3`), product name (`text-lg font-semibold text-ink`), clamped description (`text-sm text-ink-2 line-clamp-2 max-w-prose`), price (`text-xl font-semibold tabular-nums`), SKU (`text-xs text-ink-3`).
+  - Action: Secondary full-width button (`h-11 rounded-control border-line-strong bg-surface text-ink hover:bg-subtle`).
+
 
 ---
 

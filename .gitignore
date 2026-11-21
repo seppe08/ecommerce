@@ -61,3 +61,12 @@ htmlcov/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Node / Frontend Build
+node_modules/
+
+# Archives & Backups
+*.zip
+*.tar.gz
+
+
