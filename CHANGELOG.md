@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Production-ready security headers (HSTS, SSL redirect, secure session and CSRF cookies, X-Frame-Options, Content-Security-Policy).
   - Profile avatar upload sanitization, format verification with PIL, and 5MB size limit.
 
+### Fixed
+- **CI Linting Compatibility:**
+  - Removed redundant `#!/usr/bin/env python` shebang line from `manage.py` resolving Ruff `EXE001` (shebang on non-executable file) failure on Unix-based GitHub Actions runners.
+
 ### Planned
 - Shopping Cart with persistent session storage and line item management.
 - Multi-step checkout pipeline with address capture and order placement.

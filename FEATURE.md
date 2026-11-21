@@ -466,6 +466,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
     - Configured `.pre-commit-config.yaml` with Astral Ruff (linting with `--fix` and `ruff-format`), alongside standard safety hooks (`check-yaml`, `end-of-file-fixer`, `trailing-whitespace`, `check-merge-conflict`, `detect-private-key`).
   - **CI/CD GitHub Actions Workflows:**
     - Created `.github/workflows/ci.yml`: Multi-step pipeline executing Ruff linting and formatting check, Django deployment security check (`manage.py check --deploy`), and full Django test suite on Python 3.12 with Astral `uv` caching.
+    - Resolved cross-platform CI Ruff linting failure (`EXE001`) by removing the redundant shebang header from `manage.py`.
     - Created `.github/workflows/security.yml`: Continuous vulnerability monitoring with `pip-audit` for dependency analysis and TruffleHog OSS for credential/secret detection.
   - **Developer Workflow & Contribution Standards:**
     - Established `.github/PULL_REQUEST_TEMPLATE.md` with pre-merge checklist, verification evidence, and documentation synchronization enforcement.
@@ -481,6 +482,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
   - `.github/ISSUE_TEMPLATE/bug_report.md`
   - `CONTRIBUTING.md`
   - `CHANGELOG.md`
+  - `manage.py`
 
 ---
 
