@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Invoice #{{ order.order_number }} — AuraStore{% endblock %}
+
+{% block content %}
+<div class="order-detail-container">
+
+  <!-- Breadcrumb Navigation -->
+  <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}" class="breadcrumb-link">Home</a></li>
+      <li class="breadcrumb-separator" aria-hidden="true">/</li>
+      {% if user.is_authenticated %}
+        <li class="breadcrumb-item"><a href="{% url 'orders:order_list' %}" class="breadcrumb-link">My Orders</a></li>
+        <li class="breadcrumb-separator" aria-hidden="true">/</li>
+      {% endif %}
+      <li class="breadcrumb-item breadcrumb-current" aria-current="page">Invoice #{{ order.order_number }}</li>
+    </ol>
+  </nav>
+
+  <!-- Top Action Row -->
+  <div class="invoice-header-row no-print">
+    <div class="invoice-title-block">
+      <h1 class="invoice-page-title">Order Invoice</h1>
+      <span class="invoice-number-tag">#{{ order.order_number }}</span>
+    </div>
+
+    <div class="invoice-btn-group">
+      <button type="button" class="btn btn-secondary" onclick="window.print()" aria-label="Print invoice document">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="6 9 6 2 18 2 18 9"></polyline>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <rect width="12" height="8" x="6" y="14"></rect>
+        </svg>
+        <span class="btn-label">Print Invoice</span>
+      </button>
+
+      {% if user.is_authenticated %}
+        <a href="{% url 'orders:order_list' %}" class="btn btn-secondary" aria-label="Return to My Orders">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span class="btn-label">Back to Orders</span>
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Printable Invoice Document Sheet -->
+  <div class="invoice-sheet" id="invoice-sheet">
+
+    <!-- Invoice Header Bar -->
+    <div class="invoice-brand-row">
+      <div class="invoice-brand-info">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+            <path d="M3 6h18"></path>
+            <path d="M16 10a4 4 0 0 1-8 0"></path>
+          </svg>
+        </div>
+        <span class="invoice-brand-name">AuraStore E-Commerce</span>
+      </div>
+
+      <div class="invoice-meta-info">
+        <div class="invoice-meta-item">
+          <span class="meta-label">Invoice Number:</span>
+          <strong class="meta-value">INV-{{ order.order_number }}</strong>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="meta-label">Date Issued:</span>
+          <span class="meta-value">{{ order.created_at|date:"F d, Y" }}</span>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="meta-label">Order Status:</span>
+          <span class="badge badge-primary">{{ order.get_status_display }}</span>
+        </div>
+        <div class="invoice-meta-item">
+          <span class="meta-label">Payment:</span>
+          {% if order.paid %}
+            <span class="badge badge-success">Paid</span>
+          {% else %}
+            <span class="badge badge-warning">Pending Payment</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer & Destination Details -->
+    <div class="invoice-parties-grid">
+      <div class="party-box">
+        <h2 class="party-heading">Billed &amp; Shipped To:</h2>
+        <p class="party-text">
+          <strong>{{ order.full_name }}</strong><br>
+          {{ order.address }}<br>
+          {{ order.city }}, {{ order.postal_code }}<br>
+          {{ order.country }}
+        </p>
+      </div>
+
+      <div class="party-box">
+        <h2 class="party-heading">Contact Details:</h2>
+        <p class="party-text">
+          <strong>Email:</strong> {{ order.email }}<br>
+          {% if order.phone %}<strong>Phone:</strong> {{ order.phone }}<br>{% endif %}
+          <strong>Fulfillment:</strong> Standard Ground Shipping (Free)
+        </p>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="invoice-table-wrapper">
+      <table class="invoice-table" aria-label="Detailed line items list">
+        <thead>
+          <tr>
+            <th scope="col" class="th-item">Product</th>
+            <th scope="col" class="th-sku">SKU</th>
+            <th scope="col" class="th-price">Unit Price</th>
+            <th scope="col" class="th-qty">Qty</th>
+            <th scope="col" class="th-cost">Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+            <tr>
+              <td class="td-item">
+                <a href="{{ item.product.get_absolute_url }}" class="item-link">
+                  {{ item.product.name }}
+                </a>
+              </td>
+              <td class="td-sku">{{ item.product.sku }}</td>
+              <td class="td-price">${{ item.price }}</td>
+              <td class="td-qty">{{ item.quantity }}</td>
+              <td class="td-cost">${{ item.get_cost }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary Calculation -->
+    <div class="invoice-totals-wrap">
+      <div class="invoice-totals-table">
+        <div class="invoice-total-row">
+          <span class="total-label">Subtotal:</span>
+          <span class="total-value">${{ order.get_total_cost }}</span>
+        </div>
+        <div class="invoice-total-row">
+          <span class="total-label">Shipping &amp; Handling:</span>
+          <span class="total-value text-success">Free</span>
+        </div>
+        <div class="invoice-total-row">
+          <span class="total-label">Estimated Tax:</span>
+          <span class="total-value">$0.00</span>
+        </div>
+        <div class="invoice-divider"></div>
+        <div class="invoice-total-row grand-total-row">
+          <span class="total-label">Total Amount:</span>
+          <span class="total-value">${{ order.get_total_cost }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="invoice-footer-note">
+      <p>Thank you for choosing AuraStore. For questions regarding this invoice, contact our support team at support@aurastore.example.com.</p>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

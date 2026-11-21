@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Orders — AuraStore Customer Portal{% endblock %}
+
+{% block content %}
+<div class="orders-portal-container">
+
+  <!-- Breadcrumb Navigation -->
+  <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}" class="breadcrumb-link">Home</a></li>
+      <li class="breadcrumb-separator" aria-hidden="true">/</li>
+      <li class="breadcrumb-item"><a href="{% url 'profile' %}" class="breadcrumb-link">Account</a></li>
+      <li class="breadcrumb-separator" aria-hidden="true">/</li>
+      <li class="breadcrumb-item breadcrumb-current" aria-current="page">My Orders</li>
+    </ol>
+  </nav>
+
+  <!-- Portal Header -->
+  <div class="portal-header-row">
+    <div>
+      <h1 class="portal-title">My Orders</h1>
+      <p class="portal-subtitle">Track, view invoices, and manage all your past orders.</p>
+    </div>
+    <a href="{% url 'catalog:product_list' %}" class="btn btn-primary" aria-label="Shop catalog">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="8" cy="21" r="1"></circle>
+        <circle cx="19" cy="21" r="1"></circle>
+        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+      </svg>
+      <span class="btn-label">Explore Catalog</span>
+    </a>
+  </div>
+
+  <!-- Status Filter Pills -->
+  <div class="order-filter-bar" role="group" aria-label="Filter orders by status">
+    <a href="{% url 'orders:order_list' %}" class="filter-pill {% if current_status == 'all' %}active{% endif %}">
+      All Orders
+    </a>
+    {% for status_key, status_label in status_choices %}
+      <a
+        href="{% url 'orders:order_list' %}?status={{ status_key }}"
+        class="filter-pill {% if current_status == status_key %}active{% endif %}"
+      >
+        {{ status_label }}
+      </a>
+    {% endfor %}
+  </div>
+
+  {% if orders %}
+    <div class="orders-list-grid" role="list" aria-label="List of past orders">
+      {% for order in orders %}
+        <article class="order-summary-card" role="listitem" id="order-card-{{ order.order_number }}">
+          <div class="order-card-header">
+            <div class="order-meta-group">
+              <span class="order-number-title">#{{ order.order_number }}</span>
+              <span class="order-date-text">{{ order.created_at|date:"F d, Y · H:i" }}</span>
+            </div>
+
+            <div class="order-badge-group">
+              {% if order.status == 'delivered' %}
+                <span class="badge badge-success">Delivered</span>
+              {% elif order.status == 'shipped' %}
+                <span class="badge badge-info">Shipped</span>
+              {% elif order.status == 'paid' %}
+                <span class="badge badge-success">Paid</span>
+              {% elif order.status == 'processing' %}
+                <span class="badge badge-primary">Processing</span>
+              {% elif order.status == 'cancelled' %}
+                <span class="badge badge-error">Cancelled</span>
+              {% else %}
+                <span class="badge badge-warning">Pending</span>
+              {% endif %}
+
+              {% if order.paid %}
+                <span class="badge badge-success-subtle">Payment Received</span>
+              {% else %}
+                <span class="badge badge-warning-subtle">Unpaid</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Items Preview -->
+          <div class="order-card-body">
+            <div class="order-items-preview">
+              {% for item in order.items.all %}
+                <div class="order-mini-item">
+                  <div class="mini-thumb">
+                    {% if item.product.primary_image %}
+                      <img
+                        src="{{ item.product.primary_image.image.url }}"
+                        alt="{{ item.product.primary_image.alt_text|default:item.product.name }}"
+                        loading="lazy"
+                      >
+                    {% else %}
+                      <div class="mini-thumb-placeholder" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                          <circle cx="9" cy="9" r="2"></circle>
+                        </svg>
+                      </div>
+                    {% endif %}
+                  </div>
+                  <div class="mini-info">
+                    <span class="mini-name">{{ item.product.name }}</span>
+                    <span class="mini-qty">Qty: {{ item.quantity }} · ${{ item.price }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+
+            <!-- Price and Details Action -->
+            <div class="order-card-footer">
+              <div class="order-total-block">
+                <span class="total-caption">Total Amount:</span>
+                <span class="total-figure">${{ order.get_total_cost }}</span>
+              </div>
+              <div class="order-action-block">
+                <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-secondary" aria-label="View invoice and details for order {{ order.order_number }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <span class="btn-label">View Invoice</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <!-- Empty Orders State -->
+    <div class="empty-state-card" role="region" aria-label="No orders found">
+      <div class="empty-state-icon-wrap" aria-hidden="true">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="16" height="20" x="4" y="2" rx="2"></rect>
+          <line x1="8" y1="6" x2="16" y2="6"></line>
+          <line x1="8" y1="10" x2="16" y2="10"></line>
+          <line x1="8" y1="14" x2="12" y2="14"></line>
+        </svg>
+      </div>
+      <h2 class="empty-state-title">No orders found</h2>
+      <p class="empty-state-desc">
+        {% if current_status != 'all' %}
+          You have no orders matching the "<strong>{{ current_status|title }}</strong>" filter.
+        {% else %}
+          You haven't placed any orders yet. Discover our premium selection today!
+        {% endif %}
+      </p>
+      <div class="empty-state-action">
+        {% if current_status != 'all' %}
+          <a href="{% url 'orders:order_list' %}" class="btn btn-secondary">
+            <span class="btn-label">Clear Filters</span>
+          </a>
+        {% else %}
+          <a href="{% url 'catalog:product_list' %}" class="btn btn-primary btn-lg">
+            <span class="btn-label">Start Shopping</span>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
