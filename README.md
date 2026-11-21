@@ -18,6 +18,7 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **High-Empathy UI/UX:** Inline field-anchored errors, live loading spinner states on submission to prevent double clicks, and accessible password visibility toggles.
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
 - **100% Automated Test Suite:** 53 comprehensive unit and integration tests covering the complete authentication, registration, profile management, password recovery, product catalog, categories, gallery, and security lifecycle.
+- **GitOps & CI/CD Automation:** Robust multi-step GitHub Actions CI pipelines (Ruff linting & formatting, Python 3.12 Django testing with `uv` caching, and deployment security audits), automated `pip-audit` and secret scanning, pre-commit hooks, Conventional Commits, and SemVer changelog.
 
 ---
 
@@ -40,6 +41,14 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 
 ```text
 ecommerce/
+├── .github/                    # GitHub Actions workflows and issue/PR templates
+│   ├── ISSUE_TEMPLATE/         # Bug report and feature request issue templates
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   ├── workflows/              # CI/CD and security audit automation
+│   │   ├── ci.yml              # Ruff linting, test suite & deploy check
+│   │   └── security.yml        # pip-audit vulnerability & secret scanning
+│   └── PULL_REQUEST_TEMPLATE.md# Pre-merge checklist & verification template
 ├── apps/
 │   ├── accounts/               # Custom user management & authentication app
 │   │   ├── migrations/         # Database migration files
@@ -87,6 +96,9 @@ ecommerce/
 │   └── home.html               # Dashboard & catalog showcase view
 ├── .env.example                # Template for environment configuration
 ├── .gitignore                  # Production Git ignore patterns
+├── .pre-commit-config.yaml     # Git pre-commit hooks (Ruff, YAML, secrets)
+├── CHANGELOG.md                # SemVer release history following Keep a Changelog
+├── CONTRIBUTING.md             # Developer guidelines, Conventional Commits & workflow
 ├── DESIGN_SYSTEM.md            # Single source of truth for UI/UX & typography standards
 ├── docker-compose.yaml         # PostgreSQL 18 container configuration
 ├── FEATURE.md                  # Chronological inventory of implemented features
@@ -165,7 +177,12 @@ Create a superuser to access the Django administration panel:
 uv run python manage.py createsuperuser
 ```
 
-### 6. Start Development Server
+### 6. Install Pre-commit Hooks (Recommended)
+```bash
+uv run pre-commit install
+```
+
+### 7. Start Development Server
 ```bash
 uv run python manage.py runserver
 ```
@@ -189,15 +206,36 @@ $env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv 
 ```
 *All 53 unit and integration tests across accounts and catalog will execute.*
 
-### Code Quality & Linter
-Run `Ruff` to verify code standards:
+### Deployment Security Verification
+Check production deployment settings:
+```bash
+uv run python manage.py check --deploy
+```
+
+### Code Quality, Formatting & Pre-commit
+Run `Ruff` and pre-commit checks:
 ```bash
 # Check code style and lint rules
 uv run ruff check .
 
 # Automatically apply safe fixes
 uv run ruff check --fix .
+
+# Verify code formatting
+uv run ruff format --check .
+
+# Run all pre-commit hooks across all files
+uv run pre-commit run --all-files
 ```
+
+---
+
+## 🤝 Contributing & Changelog
+
+- **[CONTRIBUTING.md](file:///c:/Users/seppe/Projects/ecommerce/CONTRIBUTING.md):** Guidelines on branch conventions, Conventional Commits standard (`feat:`, `fix:`, `docs:`, `chore:`), PR review workflows, and testing criteria.
+- **[CHANGELOG.md](file:///c:/Users/seppe/Projects/ecommerce/CHANGELOG.md):** Chronological milestone release notes adhering to Keep a Changelog and Semantic Versioning (v0.1.0, v0.2.0, and Unreleased).
+- **Pull Request Template:** Standardized pre-merge verification checklist in `.github/PULL_REQUEST_TEMPLATE.md`.
+- **Issue Templates:** Feature requests and bug reports in `.github/ISSUE_TEMPLATE/`.
 
 ---
 

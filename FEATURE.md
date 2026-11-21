@@ -321,6 +321,32 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
+### 17. GitOps Automation, CI/CD Pipelines & Repository Standardization
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Pre-commit Automation:**
+    - Configured `.pre-commit-config.yaml` with Astral Ruff (linting with `--fix` and `ruff-format`), alongside standard safety hooks (`check-yaml`, `end-of-file-fixer`, `trailing-whitespace`, `check-merge-conflict`, `detect-private-key`).
+  - **CI/CD GitHub Actions Workflows:**
+    - Created `.github/workflows/ci.yml`: Multi-step pipeline executing Ruff linting and formatting check, Django deployment security check (`manage.py check --deploy`), and full Django test suite on Python 3.12 with Astral `uv` caching.
+    - Created `.github/workflows/security.yml`: Continuous vulnerability monitoring with `pip-audit` for dependency analysis and TruffleHog OSS for credential/secret detection.
+  - **Developer Workflow & Contribution Standards:**
+    - Established `.github/PULL_REQUEST_TEMPLATE.md` with pre-merge checklist, verification evidence, and documentation synchronization enforcement.
+    - Standardized `.github/ISSUE_TEMPLATE/feature_request.md` and `.github/ISSUE_TEMPLATE/bug_report.md` for consistent defect tracking and feature proposals.
+    - Authored `CONTRIBUTING.md` enforcing the Conventional Commits 1.0.0 standard, branch naming schemes (`feature/*`, `fix/*`, `chore/*`), local development setup with `uv`, pre-commit hooks, and PR review lifecycles.
+    - Authored `CHANGELOG.md` following Keep a Changelog and Semantic Versioning (SemVer 2.0.0) standard, detailing milestone releases `v0.1.0` and `v0.2.0`, alongside unreleased enhancements.
+- **Key Files:**
+  - `.pre-commit-config.yaml`
+  - `.github/workflows/ci.yml`
+  - `.github/workflows/security.yml`
+  - `.github/PULL_REQUEST_TEMPLATE.md`
+  - `.github/ISSUE_TEMPLATE/feature_request.md`
+  - `.github/ISSUE_TEMPLATE/bug_report.md`
+  - `CONTRIBUTING.md`
+  - `CHANGELOG.md`
+
+---
+
 ## 🔮 Planned / Upcoming Features
 
 - [x] **User Registration / Sign Up Flow:** Form with password validation and unique email verification.
