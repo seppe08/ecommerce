@@ -15,10 +15,9 @@ def is_ajax(request):
     """
     Check if the request is an AJAX / fetch request.
     """
-    return (
-        request.headers.get('x-requested-with') == 'XMLHttpRequest'
-        or 'application/json' in request.headers.get('Accept', '')
-    )
+    return request.headers.get(
+        "x-requested-with"
+    ) == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", "")
 
 
 def cart_detail(request):
@@ -29,17 +28,17 @@ def cart_detail(request):
     cart = Cart(request)
     subtotal = cart.get_total_price()
     # Standard estimate: 0% sales tax or configurable flat calculation
-    estimated_tax = Decimal('0.00')
+    estimated_tax = Decimal("0.00")
     total = subtotal + estimated_tax
 
     context = {
-        'cart': cart,
-        'subtotal': subtotal,
-        'estimated_tax': estimated_tax,
-        'total': total,
-        'page_title': 'Your Shopping Cart — AuraStore',
+        "cart": cart,
+        "subtotal": subtotal,
+        "estimated_tax": estimated_tax,
+        "total": total,
+        "page_title": "Your Shopping Cart — AuraStore",
     }
-    return render(request, 'cart/cart_detail.html', context)
+    return render(request, "cart/cart_detail.html", context)
 
 
 @require_POST
@@ -55,16 +54,16 @@ def cart_add(request, product_id):
     if not product.is_in_stock:
         error_msg = f'Sorry, "{product.name}" is currently out of stock.'
         if is_ajax(request):
-            return JsonResponse({'success': False, 'message': error_msg}, status=400)
+            return JsonResponse({"success": False, "message": error_msg}, status=400)
         messages.error(request, error_msg)
-        return redirect(request.POST.get('next') or product.get_absolute_url())
+        return redirect(request.POST.get("next") or product.get_absolute_url())
 
     if form.is_valid():
         cd = form.cleaned_data
-        requested_qty = cd['quantity']
-        override = cd['override']
+        requested_qty = cd["quantity"]
+        override = cd["override"]
 
-        current_qty = cart.cart.get(str(product.id), {}).get('quantity', 0)
+        current_qty = cart.cart.get(str(product.id), {}).get("quantity", 0)
         new_total_qty = requested_qty if override else current_qty + requested_qty
 
         # Stock bounds check
@@ -77,27 +76,37 @@ def cart_add(request, product_id):
             if actual_qty <= 0:
                 warning_msg = f'Maximum stock reached for "{product.name}" ({product.stock} available).'
                 if is_ajax(request):
-                    return JsonResponse({'success': False, 'message': warning_msg}, status=400)
+                    return JsonResponse(
+                        {"success": False, "message": warning_msg}, status=400
+                    )
                 messages.warning(request, warning_msg)
-                return redirect(request.POST.get('next') or 'cart:cart_detail')
+                return redirect(request.POST.get("next") or "cart:cart_detail")
 
-            cart.add(product=product, quantity=product.stock if override else actual_qty, override_quantity=override)
+            cart.add(
+                product=product,
+                quantity=product.stock if override else actual_qty,
+                override_quantity=override,
+            )
             msg = f'Added maximum available stock ({product.stock} units) of "{product.name}".'
             messages.warning(request, msg)
         else:
-            cart.add(product=product, quantity=requested_qty, override_quantity=override)
+            cart.add(
+                product=product, quantity=requested_qty, override_quantity=override
+            )
             msg = f'"{product.name}" has been added to your cart.'
             messages.success(request, msg)
 
         if is_ajax(request):
-            return JsonResponse({
-                'success': True,
-                'message': msg,
-                'cart_count': cart.get_item_count(),
-                'cart_total': f'{cart.get_total_price():.2f}',
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": msg,
+                    "cart_count": cart.get_item_count(),
+                    "cart_total": f"{cart.get_total_price():.2f}",
+                }
+            )
 
-    return redirect(request.POST.get('next') or 'cart:cart_detail')
+    return redirect(request.POST.get("next") or "cart:cart_detail")
 
 
 @require_POST
@@ -113,14 +122,16 @@ def cart_remove(request, product_id):
     messages.info(request, msg)
 
     if is_ajax(request):
-        return JsonResponse({
-            'success': True,
-            'message': msg,
-            'cart_count': cart.get_item_count(),
-            'cart_total': f'{cart.get_total_price():.2f}',
-        })
+        return JsonResponse(
+            {
+                "success": True,
+                "message": msg,
+                "cart_count": cart.get_item_count(),
+                "cart_total": f"{cart.get_total_price():.2f}",
+            }
+        )
 
-    return redirect('cart:cart_detail')
+    return redirect("cart:cart_detail")
 
 
 @require_POST
@@ -131,13 +142,13 @@ def cart_update_quantity(request, product_id):
     cart = Cart(request)
     product = get_object_or_404(Product, id=product_id, is_active=True)
 
-    action = request.POST.get('action')
-    raw_quantity = request.POST.get('quantity')
-    current_qty = cart.cart.get(str(product.id), {}).get('quantity', 1)
+    action = request.POST.get("action")
+    raw_quantity = request.POST.get("quantity")
+    current_qty = cart.cart.get(str(product.id), {}).get("quantity", 1)
 
-    if action == 'increase':
+    if action == "increase":
         target_qty = current_qty + 1
-    elif action == 'decrease':
+    elif action == "decrease":
         target_qty = current_qty - 1
     elif raw_quantity is not None:
         try:
@@ -152,14 +163,16 @@ def cart_update_quantity(request, product_id):
         msg = f'"{product.name}" was removed from your cart.'
         messages.info(request, msg)
         if is_ajax(request):
-            return JsonResponse({
-                'success': True,
-                'removed': True,
-                'message': msg,
-                'cart_count': cart.get_item_count(),
-                'cart_total': f'{cart.get_total_price():.2f}',
-            })
-        return redirect('cart:cart_detail')
+            return JsonResponse(
+                {
+                    "success": True,
+                    "removed": True,
+                    "message": msg,
+                    "cart_count": cart.get_item_count(),
+                    "cart_total": f"{cart.get_total_price():.2f}",
+                }
+            )
+        return redirect("cart:cart_detail")
 
     if target_qty > product.stock:
         target_qty = product.stock
@@ -174,14 +187,16 @@ def cart_update_quantity(request, product_id):
     line_item_total = Decimal(str(product.price)) * target_qty
 
     if is_ajax(request):
-        return JsonResponse({
-            'success': True,
-            'removed': False,
-            'quantity': target_qty,
-            'line_total': f'{line_item_total:.2f}',
-            'cart_count': cart.get_item_count(),
-            'cart_total': f'{cart.get_total_price():.2f}',
-            'message': msg,
-        })
+        return JsonResponse(
+            {
+                "success": True,
+                "removed": False,
+                "quantity": target_qty,
+                "line_total": f"{line_item_total:.2f}",
+                "cart_count": cart.get_item_count(),
+                "cart_total": f"{cart.get_total_price():.2f}",
+                "message": msg,
+            }
+        )
 
-    return redirect('cart:cart_detail')
+    return redirect("cart:cart_detail")

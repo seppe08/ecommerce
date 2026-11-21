@@ -116,7 +116,9 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_valid_jpeg_upload_accepted(self):
         image_bytes = create_in_memory_image(file_format="JPEG")
-        uploaded = SimpleUploadedFile("avatar.jpg", image_bytes, content_type="image/jpeg")
+        uploaded = SimpleUploadedFile(
+            "avatar.jpg", image_bytes, content_type="image/jpeg"
+        )
         form = UserProfileForm(
             data={"first_name": "Test", "last_name": "User"},
             files={"profile_picture": uploaded},
@@ -126,7 +128,9 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_valid_png_upload_accepted(self):
         image_bytes = create_in_memory_image(file_format="PNG")
-        uploaded = SimpleUploadedFile("avatar.png", image_bytes, content_type="image/png")
+        uploaded = SimpleUploadedFile(
+            "avatar.png", image_bytes, content_type="image/png"
+        )
         form = UserProfileForm(
             data={"first_name": "Test", "last_name": "User"},
             files={"profile_picture": uploaded},
@@ -136,7 +140,9 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_valid_webp_upload_accepted(self):
         image_bytes = create_in_memory_image(file_format="WEBP")
-        uploaded = SimpleUploadedFile("avatar.webp", image_bytes, content_type="image/webp")
+        uploaded = SimpleUploadedFile(
+            "avatar.webp", image_bytes, content_type="image/webp"
+        )
         form = UserProfileForm(
             data={"first_name": "Test", "last_name": "User"},
             files={"profile_picture": uploaded},
@@ -148,7 +154,9 @@ class FileUploadSecurityTestCase(TestCase):
         # Generate valid JPEG header with appended data exceeding 5MB
         valid_jpeg = create_in_memory_image(file_format="JPEG")
         oversized_data = valid_jpeg + (b"0" * (5 * 1024 * 1024 + 1024))
-        uploaded = SimpleUploadedFile("large.jpg", oversized_data, content_type="image/jpeg")
+        uploaded = SimpleUploadedFile(
+            "large.jpg", oversized_data, content_type="image/jpeg"
+        )
         form = UserProfileForm(
             data={"first_name": "Test"},
             files={"profile_picture": uploaded},
@@ -162,9 +170,17 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_disallowed_extension_rejected(self):
         image_bytes = create_in_memory_image(file_format="JPEG")
-        dangerous_names = ["exploit.svg", "payload.php", "script.sh", "run.exe", "file.js"]
+        dangerous_names = [
+            "exploit.svg",
+            "payload.php",
+            "script.sh",
+            "run.exe",
+            "file.js",
+        ]
         for filename in dangerous_names:
-            uploaded = SimpleUploadedFile(filename, image_bytes, content_type="application/octet-stream")
+            uploaded = SimpleUploadedFile(
+                filename, image_bytes, content_type="application/octet-stream"
+            )
             form = UserProfileForm(
                 data={"first_name": "Test"},
                 files={"profile_picture": uploaded},
@@ -174,8 +190,12 @@ class FileUploadSecurityTestCase(TestCase):
             self.assertIn("profile_picture", form.errors)
 
     def test_svg_xss_disguised_as_png_rejected(self):
-        svg_xss_payload = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
-        uploaded = SimpleUploadedFile("avatar.png", svg_xss_payload, content_type="image/png")
+        svg_xss_payload = (
+            b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+        )
+        uploaded = SimpleUploadedFile(
+            "avatar.png", svg_xss_payload, content_type="image/png"
+        )
         form = UserProfileForm(
             data={"first_name": "Test"},
             files={"profile_picture": uploaded},
@@ -186,7 +206,9 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_script_disguised_as_jpeg_rejected(self):
         script_payload = b'#!/usr/bin/env python\nimport os\nos.system("id")'
-        uploaded = SimpleUploadedFile("avatar.jpg", script_payload, content_type="image/jpeg")
+        uploaded = SimpleUploadedFile(
+            "avatar.jpg", script_payload, content_type="image/jpeg"
+        )
         form = UserProfileForm(
             data={"first_name": "Test"},
             files={"profile_picture": uploaded},
@@ -196,8 +218,10 @@ class FileUploadSecurityTestCase(TestCase):
         self.assertIn("profile_picture", form.errors)
 
     def test_corrupted_image_rejected(self):
-        corrupt_bytes = b"\xFF\xD8\xFF\xE0" + b"\x00" * 20  # Incomplete JPEG header
-        uploaded = SimpleUploadedFile("broken.jpg", corrupt_bytes, content_type="image/jpeg")
+        corrupt_bytes = b"\xff\xd8\xff\xe0" + b"\x00" * 20  # Incomplete JPEG header
+        uploaded = SimpleUploadedFile(
+            "broken.jpg", corrupt_bytes, content_type="image/jpeg"
+        )
         form = UserProfileForm(
             data={"first_name": "Test"},
             files={"profile_picture": uploaded},
@@ -208,7 +232,9 @@ class FileUploadSecurityTestCase(TestCase):
 
     def test_bmp_format_disguised_as_png_rejected(self):
         bmp_bytes = create_in_memory_image(file_format="BMP")
-        uploaded = SimpleUploadedFile("disguised.png", bmp_bytes, content_type="image/png")
+        uploaded = SimpleUploadedFile(
+            "disguised.png", bmp_bytes, content_type="image/png"
+        )
         form = UserProfileForm(
             data={"first_name": "Test"},
             files={"profile_picture": uploaded},
@@ -240,60 +266,78 @@ class OpenRedirectSecurityTestCase(TestCase):
     def test_login_safe_internal_redirect(self):
         login_url = reverse("login")
         safe_next = reverse("catalog:product_list")
-        response = self.client.post(login_url, {
-            "username_or_email": "redirectuser",
-            "password": "ValidPassword123!",
-            "next": safe_next,
-        })
+        response = self.client.post(
+            login_url,
+            {
+                "username_or_email": "redirectuser",
+                "password": "ValidPassword123!",
+                "next": safe_next,
+            },
+        )
         self.assertRedirects(response, safe_next)
 
     def test_login_evil_external_redirect_blocked(self):
         login_url = reverse("login")
-        response = self.client.post(login_url, {
-            "username_or_email": "redirectuser",
-            "password": "ValidPassword123!",
-            "next": "https://evil-phishing-site.com/steal",
-        })
+        response = self.client.post(
+            login_url,
+            {
+                "username_or_email": "redirectuser",
+                "password": "ValidPassword123!",
+                "next": "https://evil-phishing-site.com/steal",
+            },
+        )
         # Must redirect safely to internal default home, NOT evil external url
         self.assertRedirects(response, reverse(settings.LOGIN_REDIRECT_URL))
 
     def test_login_protocol_relative_redirect_blocked(self):
         login_url = reverse("login")
-        response = self.client.post(login_url, {
-            "username_or_email": "redirectuser",
-            "password": "ValidPassword123!",
-            "next": "//evil-phishing-site.com/steal",
-        })
+        response = self.client.post(
+            login_url,
+            {
+                "username_or_email": "redirectuser",
+                "password": "ValidPassword123!",
+                "next": "//evil-phishing-site.com/steal",
+            },
+        )
         self.assertRedirects(response, reverse(settings.LOGIN_REDIRECT_URL))
 
     def test_login_javascript_scheme_blocked(self):
         login_url = reverse("login")
-        response = self.client.post(login_url, {
-            "username_or_email": "redirectuser",
-            "password": "ValidPassword123!",
-            "next": "javascript:alert(document.cookie)",
-        })
+        response = self.client.post(
+            login_url,
+            {
+                "username_or_email": "redirectuser",
+                "password": "ValidPassword123!",
+                "next": "javascript:alert(document.cookie)",
+            },
+        )
         self.assertRedirects(response, reverse(settings.LOGIN_REDIRECT_URL))
 
     def test_register_safe_internal_redirect(self):
         register_url = reverse("register")
         safe_next = reverse("profile")
-        response = self.client.post(register_url, {
-            "username": "newsecureuser",
-            "email": "newsecure@example.com",
-            "password": "StrongPassword987!",
-            "password_confirm": "StrongPassword987!",
-            "next": safe_next,
-        })
+        response = self.client.post(
+            register_url,
+            {
+                "username": "newsecureuser",
+                "email": "newsecure@example.com",
+                "password": "StrongPassword987!",
+                "password_confirm": "StrongPassword987!",
+                "next": safe_next,
+            },
+        )
         self.assertRedirects(response, safe_next)
 
     def test_register_evil_external_redirect_blocked(self):
         register_url = reverse("register")
-        response = self.client.post(register_url, {
-            "username": "anothernewuser",
-            "email": "anothernew@example.com",
-            "password": "StrongPassword987!",
-            "password_confirm": "StrongPassword987!",
-            "next": "https://attacker.org/exfiltrate",
-        })
+        response = self.client.post(
+            register_url,
+            {
+                "username": "anothernewuser",
+                "email": "anothernew@example.com",
+                "password": "StrongPassword987!",
+                "password_confirm": "StrongPassword987!",
+                "next": "https://attacker.org/exfiltrate",
+            },
+        )
         self.assertRedirects(response, reverse(settings.LOGIN_REDIRECT_URL))

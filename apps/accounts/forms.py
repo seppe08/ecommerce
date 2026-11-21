@@ -18,6 +18,7 @@ class CustomLoginForm(forms.Form):
     and email identification, strict validation, helpful error messaging,
     and 'remember me' session persistence.
     """
+
     username_or_email = forms.CharField(
         label="Username or Email",
         max_length=254,
@@ -149,6 +150,7 @@ class CustomRegistrationForm(forms.ModelForm):
     strict password complexity checks via Django's password validators,
     and password confirmation matching.
     """
+
     username = forms.CharField(
         label="Username",
         max_length=150,
@@ -289,6 +291,7 @@ class UserProfileForm(forms.ModelForm):
     Profile management form allowing users to update their personal information,
     phone number, birth date, and avatar profile picture.
     """
+
     first_name = forms.CharField(
         label="First Name",
         max_length=150,
@@ -427,6 +430,7 @@ class CustomPasswordResetForm(PasswordResetForm):
     Accessible, styled password reset form supporting case-insensitive
     email lookup and clear feedback.
     """
+
     email = forms.EmailField(
         label="Email Address",
         max_length=254,
@@ -456,11 +460,7 @@ class CustomPasswordResetForm(PasswordResetForm):
             email__iexact=email,
             is_active=True,
         )
-        return (
-            u
-            for u in active_users
-            if u.has_usable_password()
-        )
+        return (u for u in active_users if u.has_usable_password())
 
 
 class CustomSetPasswordForm(SetPasswordForm):
@@ -468,6 +468,7 @@ class CustomSetPasswordForm(SetPasswordForm):
     Styled new-password form for the password reset confirmation step,
     incorporating password visibility toggles and WCAG compliance.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["new_password1"].widget = forms.PasswordInput(
@@ -478,7 +479,9 @@ class CustomSetPasswordForm(SetPasswordForm):
                 "id": "id_new_password1",
             }
         )
-        self.fields["new_password1"].help_text = (
+        self.fields[
+            "new_password1"
+        ].help_text = (
             "Must contain at least 8 characters and cannot be entirely numeric."
         )
 

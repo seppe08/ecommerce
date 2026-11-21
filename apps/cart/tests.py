@@ -20,27 +20,27 @@ class CartEngineTestCase(TestCase):
     """
 
     def setUp(self):
-        self.category = Category.objects.create(name='Electronics', slug='electronics')
+        self.category = Category.objects.create(name="Electronics", slug="electronics")
         self.product1 = Product.objects.create(
             category=self.category,
-            name='Smartphone Pro',
-            slug='smartphone-pro',
-            price=Decimal('799.99'),
-            sku='PHONE-001',
+            name="Smartphone Pro",
+            slug="smartphone-pro",
+            price=Decimal("799.99"),
+            sku="PHONE-001",
             stock=10,
         )
         self.product2 = Product.objects.create(
             category=self.category,
-            name='Wireless Earbuds',
-            slug='wireless-earbuds',
-            price=Decimal('149.50'),
-            sku='EAR-001',
+            name="Wireless Earbuds",
+            slug="wireless-earbuds",
+            price=Decimal("149.50"),
+            sku="EAR-001",
             stock=5,
         )
         self.factory = RequestFactory()
 
     def _get_cart(self, session_data=None):
-        request = self.factory.get('/')
+        request = self.factory.get("/")
         engine = import_module(settings.SESSION_ENGINE)
         session = engine.SessionStore()
         if session_data:
@@ -61,7 +61,7 @@ class CartEngineTestCase(TestCase):
 
         self.assertEqual(len(cart), 2)
         self.assertEqual(cart.get_item_count(), 2)
-        self.assertEqual(cart.get_total_price(), Decimal('1599.98'))
+        self.assertEqual(cart.get_total_price(), Decimal("1599.98"))
 
     def test_cart_add_increment(self):
         cart, _request = self._get_cart()
@@ -69,7 +69,7 @@ class CartEngineTestCase(TestCase):
         cart.add(self.product1, quantity=3)
 
         self.assertEqual(cart.get_item_count(), 4)
-        self.assertEqual(cart.cart[str(self.product1.id)]['quantity'], 4)
+        self.assertEqual(cart.cart[str(self.product1.id)]["quantity"], 4)
 
     def test_cart_add_override_quantity(self):
         cart, _request = self._get_cart()
@@ -77,7 +77,7 @@ class CartEngineTestCase(TestCase):
         cart.add(self.product1, quantity=2, override_quantity=True)
 
         self.assertEqual(cart.get_item_count(), 2)
-        self.assertEqual(cart.cart[str(self.product1.id)]['quantity'], 2)
+        self.assertEqual(cart.cart[str(self.product1.id)]["quantity"], 2)
 
     def test_cart_remove_product(self):
         cart, _request = self._get_cart()
@@ -99,10 +99,10 @@ class CartEngineTestCase(TestCase):
         items = list(iter(cart))
         self.assertEqual(len(items), 2)
 
-        p1_item = next(i for i in items if i['product'] == self.product1)
-        self.assertEqual(p1_item['quantity'], 2)
-        self.assertEqual(p1_item['price'], Decimal('799.99'))
-        self.assertEqual(p1_item['total_price'], Decimal('1599.98'))
+        p1_item = next(i for i in items if i["product"] == self.product1)
+        self.assertEqual(p1_item["quantity"], 2)
+        self.assertEqual(p1_item["price"], Decimal("799.99"))
+        self.assertEqual(p1_item["total_price"], Decimal("1599.98"))
 
     def test_cart_iteration_removes_stale_deleted_products(self):
         cart, _request = self._get_cart()
@@ -124,12 +124,12 @@ class CartEngineTestCase(TestCase):
         self.assertNotIn(CART_SESSION_ID, request.session)
 
     def test_cart_context_processor(self):
-        request = self.factory.get('/')
+        request = self.factory.get("/")
         engine = import_module(settings.SESSION_ENGINE)
         request.session = engine.SessionStore()
         ctx = cart_context_processor(request)
-        self.assertIn('cart', ctx)
-        self.assertIsInstance(ctx['cart'], Cart)
+        self.assertIn("cart", ctx)
+        self.assertIsInstance(ctx["cart"], Cart)
 
 
 class CartViewsTestCase(TestCase):
@@ -138,132 +138,140 @@ class CartViewsTestCase(TestCase):
     """
 
     def setUp(self):
-        self.category = Category.objects.create(name='Accessories', slug='accessories')
+        self.category = Category.objects.create(name="Accessories", slug="accessories")
         self.product = Product.objects.create(
             category=self.category,
-            name='Leather Wallet',
-            slug='leather-wallet',
-            price=Decimal('49.99'),
-            sku='WAL-001',
+            name="Leather Wallet",
+            slug="leather-wallet",
+            price=Decimal("49.99"),
+            sku="WAL-001",
             stock=5,
         )
         self.out_of_stock_product = Product.objects.create(
             category=self.category,
-            name='Vintage Watch',
-            slug='vintage-watch',
-            price=Decimal('199.99'),
-            sku='WATCH-001',
+            name="Vintage Watch",
+            slug="vintage-watch",
+            price=Decimal("199.99"),
+            sku="WATCH-001",
             stock=0,
         )
 
     def test_cart_detail_view_empty(self):
-        response = self.client.get(reverse('cart:cart_detail'))
+        response = self.client.get(reverse("cart:cart_detail"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Your shopping cart is empty')
-        self.assertContains(response, 'Explore Catalog')
+        self.assertContains(response, "Your shopping cart is empty")
+        self.assertContains(response, "Explore Catalog")
 
     def test_cart_add_standard_post(self):
         response = self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 2},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 2},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
         session = self.client.session
         self.assertIn(CART_SESSION_ID, session)
-        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]['quantity'], 2)
+        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]["quantity"], 2)
         # Flash message check
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any('added to your cart' in m.message for m in messages))
+        self.assertTrue(any("added to your cart" in m.message for m in messages))
 
     def test_cart_add_ajax_post(self):
         response = self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 1},
-            headers={'x-requested-with': 'XMLHttpRequest'},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 1},
+            headers={"x-requested-with": "XMLHttpRequest"},
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertTrue(data['success'])
-        self.assertEqual(data['cart_count'], 1)
-        self.assertEqual(data['cart_total'], '49.99')
+        self.assertTrue(data["success"])
+        self.assertEqual(data["cart_count"], 1)
+        self.assertEqual(data["cart_total"], "49.99")
 
     def test_cart_add_out_of_stock_rejected(self):
         response = self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.out_of_stock_product.id}),
-            {'quantity': 1},
-            headers={'x-requested-with': 'XMLHttpRequest'},
+            reverse(
+                "cart:cart_add", kwargs={"product_id": self.out_of_stock_product.id}
+            ),
+            {"quantity": 1},
+            headers={"x-requested-with": "XMLHttpRequest"},
         )
         self.assertEqual(response.status_code, 400)
         data = response.json()
-        self.assertFalse(data['success'])
-        self.assertIn('out of stock', data['message'])
+        self.assertFalse(data["success"])
+        self.assertIn("out of stock", data["message"])
 
     def test_cart_add_exceeding_stock_clamped(self):
         # Product stock is 5
         response = self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 10},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 10},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
         session = self.client.session
         # Clamped to max available stock
-        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]['quantity'], 5)
+        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]["quantity"], 5)
 
     def test_cart_update_quantity_increase(self):
         self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 1},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 1},
         )
         response = self.client.post(
-            reverse('cart:cart_update_quantity', kwargs={'product_id': self.product.id}),
-            {'action': 'increase'},
-            headers={'x-requested-with': 'XMLHttpRequest'},
+            reverse(
+                "cart:cart_update_quantity", kwargs={"product_id": self.product.id}
+            ),
+            {"action": "increase"},
+            headers={"x-requested-with": "XMLHttpRequest"},
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertTrue(data['success'])
-        self.assertEqual(data['quantity'], 2)
-        self.assertEqual(data['cart_count'], 2)
+        self.assertTrue(data["success"])
+        self.assertEqual(data["quantity"], 2)
+        self.assertEqual(data["cart_count"], 2)
 
     def test_cart_update_quantity_decrease(self):
         self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 3},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 3},
         )
         response = self.client.post(
-            reverse('cart:cart_update_quantity', kwargs={'product_id': self.product.id}),
-            {'action': 'decrease'},
+            reverse(
+                "cart:cart_update_quantity", kwargs={"product_id": self.product.id}
+            ),
+            {"action": "decrease"},
             follow=True,
         )
         self.assertEqual(response.status_code, 200)
         session = self.client.session
-        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]['quantity'], 2)
+        self.assertEqual(session[CART_SESSION_ID][str(self.product.id)]["quantity"], 2)
 
     def test_cart_update_quantity_to_zero_removes_item(self):
         self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 1},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 1},
         )
         response = self.client.post(
-            reverse('cart:cart_update_quantity', kwargs={'product_id': self.product.id}),
-            {'action': 'decrease'},
-            headers={'x-requested-with': 'XMLHttpRequest'},
+            reverse(
+                "cart:cart_update_quantity", kwargs={"product_id": self.product.id}
+            ),
+            {"action": "decrease"},
+            headers={"x-requested-with": "XMLHttpRequest"},
         )
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertTrue(data['success'])
-        self.assertTrue(data['removed'])
-        self.assertEqual(data['cart_count'], 0)
+        self.assertTrue(data["success"])
+        self.assertTrue(data["removed"])
+        self.assertEqual(data["cart_count"], 0)
 
     def test_cart_remove_view(self):
         self.client.post(
-            reverse('cart:cart_add', kwargs={'product_id': self.product.id}),
-            {'quantity': 2},
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 2},
         )
         response = self.client.post(
-            reverse('cart:cart_remove', kwargs={'product_id': self.product.id}),
+            reverse("cart:cart_remove", kwargs={"product_id": self.product.id}),
             follow=True,
         )
         self.assertEqual(response.status_code, 200)

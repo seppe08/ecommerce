@@ -54,74 +54,102 @@ class AuthenticationAndLoginTests(TestCase):
         self.assertContains(response, "theme-toggle-btn")
 
     def test_login_with_username_success(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser",
-            "password": "SecurePassword123!",
-        }, follow=True)
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser",
+                "password": "SecurePassword123!",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
         self.assertEqual(response.context["user"].username, "testuser")
         self.assertContains(response, "Welcome back, Jane!")
 
     def test_login_with_email_success(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser@example.com",
-            "password": "SecurePassword123!",
-        }, follow=True)
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser@example.com",
+                "password": "SecurePassword123!",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
         self.assertEqual(response.context["user"].email, "testuser@example.com")
 
     def test_login_case_insensitivity(self):
         # Email with uppercase characters
-        response = self.client.post(self.login_url, {
-            "username_or_email": "TestUser@EXAMPLE.com",
-            "password": "SecurePassword123!",
-        }, follow=True)
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "TestUser@EXAMPLE.com",
+                "password": "SecurePassword123!",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
 
         # Username with uppercase characters
         self.client.logout()
-        response = self.client.post(self.login_url, {
-            "username_or_email": "TestUser",
-            "password": "SecurePassword123!",
-        }, follow=True)
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "TestUser",
+                "password": "SecurePassword123!",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
 
     def test_login_with_invalid_password(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser",
-            "password": "WrongPassword!",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser",
+                "password": "WrongPassword!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["user"].is_authenticated)
         self.assertContains(response, "Invalid credentials")
 
     def test_login_with_nonexistent_user(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "nonexistent@example.com",
-            "password": "AnyPassword123!",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "nonexistent@example.com",
+                "password": "AnyPassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["user"].is_authenticated)
         self.assertContains(response, "No account was found")
 
     def test_login_with_inactive_user(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "inactiveuser",
-            "password": "SecurePassword123!",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "inactiveuser",
+                "password": "SecurePassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.context["user"].is_authenticated)
         self.assertContains(response, "deactivated")
 
     def test_login_missing_fields_validation(self):
-        response = self.client.post(self.login_url, {
-            "username_or_email": "",
-            "password": "",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "",
+                "password": "",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("username_or_email", form.errors)
@@ -129,31 +157,40 @@ class AuthenticationAndLoginTests(TestCase):
 
     def test_remember_me_session_expiry(self):
         # Remember me checked -> 30 days expiry
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser",
-            "password": "SecurePassword123!",
-            "remember_me": "on",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser",
+                "password": "SecurePassword123!",
+                "remember_me": "on",
+            },
+        )
         self.assertEqual(response.status_code, 302)
         self.assertFalse(self.client.session.get_expire_at_browser_close())
         self.assertEqual(self.client.session.get_expiry_age(), 60 * 60 * 24 * 30)
 
         # Remember me unchecked -> browser session (expires at browser close)
         self.client.logout()
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser",
-            "password": "SecurePassword123!",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser",
+                "password": "SecurePassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 302)
         self.assertTrue(self.client.session.get_expire_at_browser_close())
 
     def test_open_redirect_protection(self):
         # Malicious next URL should be rejected and redirected safely to home
-        response = self.client.post(self.login_url, {
-            "username_or_email": "testuser",
-            "password": "SecurePassword123!",
-            "next": "https://malicious-phishing-site.com",
-        })
+        response = self.client.post(
+            self.login_url,
+            {
+                "username_or_email": "testuser",
+                "password": "SecurePassword123!",
+                "next": "https://malicious-phishing-site.com",
+            },
+        )
         self.assertRedirects(response, self.home_url)
 
     def test_authenticated_user_redirected_from_login(self):
@@ -196,12 +233,16 @@ class UserRegistrationTests(TestCase):
         self.assertRedirects(response, self.home_url)
 
     def test_successful_registration(self):
-        response = self.client.post(self.register_url, {
-            "username": "brandnewuser",
-            "email": "brandnew@example.com",
-            "password": "ComplexPassword123!",
-            "password_confirm": "ComplexPassword123!",
-        }, follow=True)
+        response = self.client.post(
+            self.register_url,
+            {
+                "username": "brandnewuser",
+                "email": "brandnew@example.com",
+                "password": "ComplexPassword123!",
+                "password_confirm": "ComplexPassword123!",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context["user"].is_authenticated)
         self.assertEqual(response.context["user"].username, "brandnewuser")
@@ -213,37 +254,48 @@ class UserRegistrationTests(TestCase):
         self.assertTrue(user.check_password("ComplexPassword123!"))
 
     def test_registration_with_existing_email(self):
-        response = self.client.post(self.register_url, {
-            "username": "anotheruniqueuser",
-            "email": "EXISTING@example.com",  # case-insensitive clash
-            "password": "ComplexPassword123!",
-            "password_confirm": "ComplexPassword123!",
-        })
+        response = self.client.post(
+            self.register_url,
+            {
+                "username": "anotheruniqueuser",
+                "email": "EXISTING@example.com",  # case-insensitive clash
+                "password": "ComplexPassword123!",
+                "password_confirm": "ComplexPassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("email", form.errors)
         self.assertContains(response, "already exists")
-        self.assertFalse(UserModel.objects.filter(username="anotheruniqueuser").exists())
+        self.assertFalse(
+            UserModel.objects.filter(username="anotheruniqueuser").exists()
+        )
 
     def test_registration_with_existing_username(self):
-        response = self.client.post(self.register_url, {
-            "username": "ExistingUser",  # case-insensitive clash
-            "email": "newuniqueemail@example.com",
-            "password": "ComplexPassword123!",
-            "password_confirm": "ComplexPassword123!",
-        })
+        response = self.client.post(
+            self.register_url,
+            {
+                "username": "ExistingUser",  # case-insensitive clash
+                "email": "newuniqueemail@example.com",
+                "password": "ComplexPassword123!",
+                "password_confirm": "ComplexPassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("username", form.errors)
         self.assertContains(response, "already exists")
 
     def test_registration_password_mismatch(self):
-        response = self.client.post(self.register_url, {
-            "username": "mismatchuser",
-            "email": "mismatch@example.com",
-            "password": "ComplexPassword123!",
-            "password_confirm": "DifferentPassword123!",
-        })
+        response = self.client.post(
+            self.register_url,
+            {
+                "username": "mismatchuser",
+                "email": "mismatch@example.com",
+                "password": "ComplexPassword123!",
+                "password_confirm": "DifferentPassword123!",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("password_confirm", form.errors)
@@ -251,12 +303,15 @@ class UserRegistrationTests(TestCase):
 
     def test_registration_weak_password_rejected(self):
         # Test password too short or common
-        response = self.client.post(self.register_url, {
-            "username": "weakpwuser",
-            "email": "weak@example.com",
-            "password": "123",
-            "password_confirm": "123",
-        })
+        response = self.client.post(
+            self.register_url,
+            {
+                "username": "weakpwuser",
+                "email": "weak@example.com",
+                "password": "123",
+                "password_confirm": "123",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("password", form.errors)
@@ -293,12 +348,16 @@ class UserProfileManagementTests(TestCase):
 
     def test_profile_update_successful(self):
         self.client.force_login(self.user)
-        response = self.client.post(self.profile_url, {
-            "first_name": "Ford",
-            "last_name": "Prefect",
-            "phone": "+1-555-999-8888",
-            "birth_date": "1985-06-20",
-        }, follow=True)
+        response = self.client.post(
+            self.profile_url,
+            {
+                "first_name": "Ford",
+                "last_name": "Prefect",
+                "phone": "+1-555-999-8888",
+                "birth_date": "1985-06-20",
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "saved successfully")
 
@@ -310,11 +369,14 @@ class UserProfileManagementTests(TestCase):
 
     def test_profile_invalid_phone_rejected(self):
         self.client.force_login(self.user)
-        response = self.client.post(self.profile_url, {
-            "first_name": "Ford",
-            "last_name": "Prefect",
-            "phone": "INVALID_PHONE_#$$$%",
-        })
+        response = self.client.post(
+            self.profile_url,
+            {
+                "first_name": "Ford",
+                "last_name": "Prefect",
+                "phone": "INVALID_PHONE_#$$$%",
+            },
+        )
         self.assertEqual(response.status_code, 200)
         form = response.context["form"]
         self.assertIn("phone", form.errors)
@@ -322,12 +384,16 @@ class UserProfileManagementTests(TestCase):
     def test_profile_picture_upload(self):
         self.client.force_login(self.user)
         avatar = get_dummy_avatar()
-        response = self.client.post(self.profile_url, {
-            "first_name": "Arthur",
-            "last_name": "Dent",
-            "phone": "+1234567890",
-            "profile_picture": avatar,
-        }, follow=True)
+        response = self.client.post(
+            self.profile_url,
+            {
+                "first_name": "Arthur",
+                "last_name": "Dent",
+                "phone": "+1234567890",
+                "profile_picture": avatar,
+            },
+            follow=True,
+        )
         self.assertEqual(response.status_code, 200)
         self.user.refresh_from_db()
         self.assertTrue(bool(self.user.profile_picture))
@@ -355,9 +421,12 @@ class PasswordResetWorkflowTests(TestCase):
 
     def test_password_reset_email_dispatched(self):
         mail.outbox = []
-        response = self.client.post(self.reset_url, {
-            "email": "resetuser@example.com",
-        })
+        response = self.client.post(
+            self.reset_url,
+            {
+                "email": "resetuser@example.com",
+            },
+        )
         self.assertRedirects(response, self.reset_done_url)
         self.assertEqual(len(mail.outbox), 1)
         dispatched_email = mail.outbox[0]
@@ -373,7 +442,9 @@ class PasswordResetWorkflowTests(TestCase):
     def test_password_reset_confirm_with_valid_token(self):
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))
         token = default_token_generator.make_token(self.user)
-        confirm_url = reverse("password_reset_confirm", kwargs={"uidb64": uid, "token": token})
+        confirm_url = reverse(
+            "password_reset_confirm", kwargs={"uidb64": uid, "token": token}
+        )
 
         # GET should follow session redirect and render new password form
         response = self.client.get(confirm_url, follow=True)
@@ -384,10 +455,13 @@ class PasswordResetWorkflowTests(TestCase):
         self.assertContains(response, "id_new_password2")
 
         # POST valid new passwords to the active view path
-        post_response = self.client.post(response.request["PATH_INFO"], {
-            "new_password1": "NewlySetPassword999!",
-            "new_password2": "NewlySetPassword999!",
-        })
+        post_response = self.client.post(
+            response.request["PATH_INFO"],
+            {
+                "new_password1": "NewlySetPassword999!",
+                "new_password2": "NewlySetPassword999!",
+            },
+        )
         self.assertRedirects(post_response, self.reset_complete_url)
 
         # Confirm password actually changed

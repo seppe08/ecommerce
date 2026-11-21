@@ -4,7 +4,7 @@ from django.conf import settings
 
 from apps.catalog.models import Product
 
-CART_SESSION_ID = getattr(settings, 'CART_SESSION_ID', 'cart')
+CART_SESSION_ID = getattr(settings, "CART_SESSION_ID", "cart")
 
 
 class Cart:
@@ -29,24 +29,24 @@ class Cart:
 
         if product_id not in self.cart:
             self.cart[product_id] = {
-                'quantity': 0,
-                'price': str(product.price),
+                "quantity": 0,
+                "price": str(product.price),
             }
 
         if override_quantity:
-            self.cart[product_id]['quantity'] = quantity
+            self.cart[product_id]["quantity"] = quantity
         else:
-            self.cart[product_id]['quantity'] += quantity
+            self.cart[product_id]["quantity"] += quantity
 
         # Update price to current product price in case catalog updated
-        self.cart[product_id]['price'] = str(product.price)
+        self.cart[product_id]["price"] = str(product.price)
         self.save()
 
     def remove(self, product):
         """
         Remove a product from the cart. Accepts a Product instance or ID.
         """
-        product_id = str(getattr(product, 'id', product))
+        product_id = str(getattr(product, "id", product))
         if product_id in self.cart:
             del self.cart[product_id]
             self.save()
@@ -80,30 +80,29 @@ class Cart:
             product = product_map.get(product_id)
             if product:
                 item = item_data.copy()
-                item['product'] = product
-                item['price'] = Decimal(item['price'])
-                item['total_price'] = item['price'] * item['quantity']
+                item["product"] = product
+                item["price"] = Decimal(item["price"])
+                item["total_price"] = item["price"] * item["quantity"]
                 yield item
 
     def __len__(self):
         """
         Count total quantity of items in the cart.
         """
-        return sum(item['quantity'] for item in self.cart.values())
+        return sum(item["quantity"] for item in self.cart.values())
 
     def get_item_count(self):
         """
         Return the total number of items in the cart.
         """
-        return sum(item['quantity'] for item in self.cart.values())
+        return sum(item["quantity"] for item in self.cart.values())
 
     def get_total_price(self):
         """
         Calculate total price across all items in the cart.
         """
         return sum(
-            Decimal(item['price']) * item['quantity']
-            for item in self.cart.values()
+            Decimal(item["price"]) * item["quantity"] for item in self.cart.values()
         )
 
     def clear(self):

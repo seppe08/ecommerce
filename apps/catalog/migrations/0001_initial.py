@@ -5,78 +5,119 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Category',
+            name="Category",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('slug', models.SlugField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('image', models.ImageField(blank=True, null=True, upload_to='categories/')),
-                ('is_active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255, unique=True)),
+                ("slug", models.SlugField(max_length=255, unique=True)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "image",
+                    models.ImageField(blank=True, null=True, upload_to="categories/"),
+                ),
+                ("is_active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'Category',
-                'verbose_name_plural': 'Categories',
-                'ordering': ('name',),
+                "verbose_name": "Category",
+                "verbose_name_plural": "Categories",
+                "ordering": ("name",),
             },
         ),
         migrations.CreateModel(
-            name='Product',
+            name="Product",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('slug', models.SlugField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('sku', models.CharField(max_length=64, unique=True)),
-                ('stock', models.PositiveIntegerField(default=0)),
-                ('is_active', models.BooleanField(default=True)),
-                ('featured', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='products', to='catalog.category')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("slug", models.SlugField(max_length=255, unique=True)),
+                ("description", models.TextField(blank=True)),
+                ("price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("sku", models.CharField(max_length=64, unique=True)),
+                ("stock", models.PositiveIntegerField(default=0)),
+                ("is_active", models.BooleanField(default=True)),
+                ("featured", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="products",
+                        to="catalog.category",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Product',
-                'verbose_name_plural': 'Products',
-                'ordering': ('-created_at',),
+                "verbose_name": "Product",
+                "verbose_name_plural": "Products",
+                "ordering": ("-created_at",),
             },
         ),
         migrations.CreateModel(
-            name='ProductImage',
+            name="ProductImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='products/')),
-                ('alt_text', models.CharField(blank=True, max_length=255)),
-                ('is_primary', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='catalog.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("image", models.ImageField(upload_to="products/")),
+                ("alt_text", models.CharField(blank=True, max_length=255)),
+                ("is_primary", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="catalog.product",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Product Image',
-                'verbose_name_plural': 'Product Images',
-                'ordering': ('-is_primary', 'id'),
+                "verbose_name": "Product Image",
+                "verbose_name_plural": "Product Images",
+                "ordering": ("-is_primary", "id"),
             },
         ),
         migrations.AddIndex(
-            model_name='product',
-            index=models.Index(fields=['slug'], name='catalog_pro_slug_2b1eb6_idx'),
+            model_name="product",
+            index=models.Index(fields=["slug"], name="catalog_pro_slug_2b1eb6_idx"),
         ),
         migrations.AddIndex(
-            model_name='product',
-            index=models.Index(fields=['sku'], name='catalog_pro_sku_2c4c34_idx'),
+            model_name="product",
+            index=models.Index(fields=["sku"], name="catalog_pro_sku_2c4c34_idx"),
         ),
         migrations.AddIndex(
-            model_name='product',
-            index=models.Index(fields=['-created_at'], name='catalog_pro_created_eee82f_idx'),
+            model_name="product",
+            index=models.Index(
+                fields=["-created_at"], name="catalog_pro_created_eee82f_idx"
+            ),
         ),
     ]

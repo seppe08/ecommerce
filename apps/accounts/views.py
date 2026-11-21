@@ -24,6 +24,7 @@ class CustomLoginView(View):
     Renders and processes the custom login flow with thorough validation,
     open-redirect protection, remember-me session persistence, and feedback.
     """
+
     template_name = "accounts/login.html"
 
     def get(self, request, *args, **kwargs):
@@ -33,11 +34,15 @@ class CustomLoginView(View):
 
         form = CustomLoginForm(request=request)
         next_url = request.GET.get("next", "")
-        return render(request, self.template_name, {
-            "form": form,
-            "next": next_url,
-            "page_title": "Sign In | Modern E-Commerce",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "next": next_url,
+                "page_title": "Sign In | Modern E-Commerce",
+            },
+        )
 
     def post(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -59,19 +64,26 @@ class CustomLoginView(View):
                 request.session.set_expiry(0)
 
             display_name = user.first_name if user.first_name else user.username
-            messages.success(request, f"Welcome back, {display_name}! You are successfully signed in.")
+            messages.success(
+                request,
+                f"Welcome back, {display_name}! You are successfully signed in.",
+            )
 
             return self._redirect_to_next_or_home(request, next_url)
 
         messages.error(
             request,
-            "Authentication failed. Please verify your credentials and try again."
+            "Authentication failed. Please verify your credentials and try again.",
         )
-        return render(request, self.template_name, {
-            "form": form,
-            "next": next_url,
-            "page_title": "Sign In | Modern E-Commerce",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "next": next_url,
+                "page_title": "Sign In | Modern E-Commerce",
+            },
+        )
 
     def _redirect_to_next_or_home(self, request, next_url=""):
         if next_url and url_has_allowed_host_and_scheme(
@@ -88,6 +100,7 @@ class CustomLogoutView(View):
     Safely logs out the current user and redirects to login with confirmation.
     Supports both POST and GET for UX convenience.
     """
+
     def get(self, request, *args, **kwargs):
         return self._do_logout(request)
 
@@ -98,7 +111,9 @@ class CustomLogoutView(View):
         if request.user.is_authenticated:
             display_name = request.user.first_name or request.user.username
             auth_logout(request)
-            messages.info(request, f"Goodbye, {display_name}. You have been signed out.")
+            messages.info(
+                request, f"Goodbye, {display_name}. You have been signed out."
+            )
         else:
             messages.info(request, "You have been signed out.")
         return redirect(settings.LOGOUT_REDIRECT_URL)
@@ -110,6 +125,7 @@ class RegisterView(View):
     password policy validation, automatic login upon sign-up, and
     WCAG AA accessible error messaging.
     """
+
     template_name = "accounts/register.html"
 
     def get(self, request, *args, **kwargs):
@@ -118,11 +134,15 @@ class RegisterView(View):
 
         form = CustomRegistrationForm()
         next_url = request.GET.get("next", "")
-        return render(request, self.template_name, {
-            "form": form,
-            "next": next_url,
-            "page_title": "Create Account — AuraStore",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "next": next_url,
+                "page_title": "Create Account — AuraStore",
+            },
+        )
 
     def post(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -133,12 +153,16 @@ class RegisterView(View):
 
         if form.is_valid():
             user = form.save()
-            auth_login(request, user, backend="apps.accounts.backends.EmailOrUsernameModelBackend")
+            auth_login(
+                request,
+                user,
+                backend="apps.accounts.backends.EmailOrUsernameModelBackend",
+            )
 
             display_name = user.first_name if user.first_name else user.username
             messages.success(
                 request,
-                f"Welcome to AuraStore, {display_name}! Your account has been created successfully."
+                f"Welcome to AuraStore, {display_name}! Your account has been created successfully.",
             )
             if next_url and url_has_allowed_host_and_scheme(
                 url=next_url,
@@ -150,13 +174,17 @@ class RegisterView(View):
 
         messages.error(
             request,
-            "Registration failed. Please check the information you entered below."
+            "Registration failed. Please check the information you entered below.",
         )
-        return render(request, self.template_name, {
-            "form": form,
-            "next": next_url,
-            "page_title": "Create Account — AuraStore",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "next": next_url,
+                "page_title": "Create Account — AuraStore",
+            },
+        )
 
 
 class ProfileView(LoginRequiredMixin, View):
@@ -164,15 +192,20 @@ class ProfileView(LoginRequiredMixin, View):
     User profile management view allowing authenticated users to update
     their personal details, phone number, date of birth, and avatar.
     """
+
     template_name = "accounts/profile.html"
     login_url = "login"
 
     def get(self, request, *args, **kwargs):
         form = UserProfileForm(instance=request.user)
-        return render(request, self.template_name, {
-            "form": form,
-            "page_title": "My Profile — AuraStore",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "page_title": "My Profile — AuraStore",
+            },
+        )
 
     def post(self, request, *args, **kwargs):
         form = UserProfileForm(
@@ -182,23 +215,30 @@ class ProfileView(LoginRequiredMixin, View):
         )
         if form.is_valid():
             form.save()
-            messages.success(request, "Your profile information has been saved successfully.")
+            messages.success(
+                request, "Your profile information has been saved successfully."
+            )
             return redirect("profile")
 
         messages.error(
             request,
-            "Unable to update profile. Please correct the errors highlighted below."
+            "Unable to update profile. Please correct the errors highlighted below.",
         )
-        return render(request, self.template_name, {
-            "form": form,
-            "page_title": "My Profile — AuraStore",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "page_title": "My Profile — AuraStore",
+            },
+        )
 
 
 class CustomPasswordResetView(auth_views.PasswordResetView):
     """
     Renders and handles the request to send a password reset email.
     """
+
     template_name = "accounts/password_reset_form.html"
     form_class = CustomPasswordResetForm
     email_template_name = "accounts/password_reset_email.html"
@@ -215,6 +255,7 @@ class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
     """
     Informs user that password reset instructions have been dispatched.
     """
+
     template_name = "accounts/password_reset_done.html"
 
     def get_context_data(self, **kwargs):
@@ -227,6 +268,7 @@ class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
     """
     Allows user to specify a new password using token validation.
     """
+
     template_name = "accounts/password_reset_confirm.html"
     form_class = CustomSetPasswordForm
     success_url = reverse_lazy("password_reset_complete")
@@ -241,6 +283,7 @@ class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
     """
     Informs user that their password was successfully reset.
     """
+
     template_name = "accounts/password_reset_complete.html"
 
     def get_context_data(self, **kwargs):
@@ -254,6 +297,7 @@ class HomeView(TemplateView):
     Landing and dashboard page showcasing the cohesive design system,
     theme switcher, logged-in status, and platform controls.
     """
+
     template_name = "home.html"
 
     def get_context_data(self, **kwargs):
