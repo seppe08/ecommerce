@@ -593,6 +593,166 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
+### 18. Stripe & Card Payment Gateway Integration
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Integrated Stripe payment processing alongside Cash on Delivery (COD) payment method selector during checkout.
+  - Added `payment_method` (`stripe` vs `cod`) and `stripe_payment_intent_id` to `Order` model with automated status transition method `mark_as_paid()`.
+  - Created dedicated accessible `/orders/payment/<order_number>/` view and template with interactive card form (`cardholder_name`, `card_number`, `expiry`, `cvc`), 256-bit SSL encryption badge, and test-card sandbox support (`4242 4242 4242 4242`).
+  - Supports simulated card declines (`4000 0000 0000 0002` / cards ending in `0002`) and optional switch to COD.
+  - Configured `@csrf_exempt` Stripe webhook handler at `/orders/webhook/stripe/` for asynchronous `payment_intent.succeeded` events.
+- **Key Files:**
+  - `core/settings.py`
+  - `.env.example`
+  - `apps/orders/models.py`
+  - `apps/orders/forms.py`
+  - `apps/orders/views.py`
+  - `apps/orders/urls.py`
+  - `apps/orders/admin.py`
+  - `templates/orders/order_payment.html`
+  - `templates/orders/order_create.html`
+  - `templates/orders/order_created.html`
+  - `templates/orders/order_detail.html`
+- **Verification:**
+  - Comprehensive unit and integration tests covering checkout routing, valid card payment, declined card simulation, COD switching, unauthorized payment access rejection (403), and webhook processing.
+
+---
+
+### 19. Promotions & Coupon Discount System
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Implemented `Coupon` model supporting both percentage-off (`percent`) and fixed-dollar-amount (`fixed`) discounts.
+  - Comprehensive validation engine checking `is_active`, `valid_from` to `valid_to` time windows, `usage_limit` vs `times_used`, and minimum order subtotal spend (`min_purchase_amount`).
+  - Integrated into session-backed `Cart` engine: `cart.coupon`, `cart.get_discount()`, `cart.get_total_price_after_discount()`, with endpoints `/cart/coupon/apply/` and `/cart/coupon/remove/`.
+  - Added promo code redemption component to `cart_detail.html` with real-time feedback and active coupon removal pill.
+  - Linked active coupon and calculated discount directly onto `Order` record upon checkout with atomic `times_used` incrementation.
+- **Key Files:**
+  - `apps/orders/models.py`
+  - `apps/orders/admin.py`
+  - `apps/cart/cart.py`
+  - `apps/cart/views.py`
+  - `apps/cart/urls.py`
+  - `templates/cart/cart_detail.html`
+  - `templates/orders/order_create.html`
+  - `templates/orders/order_payment.html`
+  - `templates/orders/order_created.html`
+  - `templates/orders/order_detail.html`
+- **Verification:**
+  - `CouponIntegrationTestCase` covering percentage discounts, flat discounts, minimum spend enforcement, expiration rejection, cart session application, and order linkage.
+
+---
+
+### 20. Customer Product Reviews & Star Ratings
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Created `Review` model attached to `Product` and `CustomUser` with 1–5 star ratings, headline title, feedback text, and unique constraint per user/product pair.
+  - Automated Verified Purchase detection: cross-references customer's past paid orders to award `is_verified_purchase = True`.
+  - Dynamic `average_rating`, `review_count`, and `rating_distribution` percentage calculations on `Product`.
+  - Integrated visual star rating badges across unified `product_card.html` and `product_detail.html`.
+  - Designed accessible review submission form and verified reviews showcase with rating distribution progress bars.
+- **Key Files:**
+  - `apps/catalog/models.py`
+  - `apps/catalog/forms.py`
+  - `apps/catalog/views.py`
+  - `apps/catalog/urls.py`
+  - `apps/catalog/admin.py`
+  - `templates/catalog/product_detail.html`
+  - `templates/includes/product_card.html`
+- **Verification:**
+  - `ReviewAndRatingTestCase` testing multi-review average calculations, distribution rounding, authenticated submissions, verified buyer detection, and unauthenticated redirects.
+
+---
+
+### 21. Customer Wishlist & Saved Items System
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Created `Wishlist` model linked one-to-one with `CustomUser` with many-to-many relationship to `Product`.
+  - Interactive wishlist heart toggle button on product cards (`product_card.html`) and product detail page (`product_detail.html`) supporting both AJAX JSON response and standard POST fallback.
+  - Dedicated customer portal page at `/products/wishlist/` with product cards, stock status, direct "Move to Cart" button, and quick remove actions.
+  - Added accessible Wishlist shortcut link in header navigation for authenticated customers.
+- **Key Files:**
+  - `apps/catalog/models.py`
+  - `apps/catalog/views.py`
+  - `apps/catalog/urls.py`
+  - `apps/catalog/admin.py`
+  - `templates/catalog/wishlist.html`
+  - `templates/includes/product_card.html`
+  - `templates/catalog/product_detail.html`
+  - `templates/base.html`
+- **Verification:**
+  - `WishlistTestCase` validating toggle addition and removal, JSON response format, customer portal rendering, and unauthenticated redirects.
+
+---
+
+### 22. Saved Customer Address Book & Checkout Auto-Fill
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Created `Address` model linked to `CustomUser` with default shipping address management (`is_default`).
+  - Added "Save this address to my address book for faster checkout" checkbox to `OrderCreateForm`.
+  - Authenticated checkout auto-fills from customer's default address and provides 1-click quick-select chips for stored addresses.
+  - Registered `AddressInline` in `CustomUserAdmin` and dedicated `AddressAdmin`.
+- **Key Files:**
+  - `apps/accounts/models.py`
+  - `apps/accounts/admin.py`
+  - `apps/orders/forms.py`
+  - `apps/orders/views.py`
+  - `templates/orders/order_create.html`
+- **Verification:**
+  - Tested automated address creation upon order placement and pre-population into checkout forms.
+
+---
+
+### 23. Order Cancellation with Atomic Inventory Replenishment
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Implemented `/orders/cancel/<order_number>/` endpoint allowing customers to cancel orders that are in `pending` state.
+  - Concurrency-safe atomic rollback: uses `transaction.atomic()` and `select_for_update()` to restore product inventory units back into `Product.stock`.
+  - Added accessible "Cancel Order" button with confirmation prompt on order detail view for authorized order owners.
+  - Access controls prevent unauthorized cancellation attempts (403) and reject cancellation on non-pending orders.
+- **Key Files:**
+  - `apps/orders/views.py`
+  - `apps/orders/urls.py`
+  - `templates/orders/order_detail.html`
+- **Verification:**
+  - Automated unit tests confirming stock restoration, status transition to `cancelled`, and permission rejection.
+
+---
+
+### 24. Transactional Order Confirmation Receipt Emails
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Automated dispatch of itemized order confirmation receipts in both styled HTML and clean plaintext formats upon order placement (COD) or payment confirmation (Stripe).
+  - Outbox includes order number, item descriptions, SKUs, line item totals, subtotal, discount, shipping, total amount, and shipping destination details.
+  - Uses `EmailMultiAlternatives` with `fail_silently=True` to guarantee checkout flow continuity.
+- **Key Files:**
+  - `apps/orders/views.py`
+  - `templates/orders/emails/order_confirmation.txt`
+  - `templates/orders/emails/order_confirmation.html`
+- **Verification:**
+  - `test_order_confirmation_email_sent_on_checkout` verifying subject, recipient, itemization, and body rendering.
+
+---
+
+### 25. Database Seeding Command (`python manage.py seed_db`)
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - Built comprehensive CLI management command `seed_db` in `apps/catalog/management/commands/seed_db.py`.
+  - Populates 5 curated categories, 9 high-fidelity products with full editorial copy, sample customer reviews, promotional coupons (`WELCOME10`, `SAVE20`, `FLAT25`), and a demo customer account (`customer@aurastore.com` / `Password123!`) with a saved address.
+- **Key Files:**
+  - `apps/catalog/management/commands/seed_db.py`
+- **Verification:**
+  - Executed `uv run python manage.py seed_db` successfully initializing sample catalog and demo account.
+
+---
+
 ## 🔮 Planned / Upcoming Features
 
 - [x] **User Registration / Sign Up Flow:** Form with password validation and unique email verification.
@@ -603,5 +763,13 @@ Whenever a feature, module, or enhancement is successfully implemented:
 - [x] **Orders & Customer Portal:** Atomic inventory reduction, order management, and printable invoices.
 - [x] **Enterprise Security Hardening & Defenses:** Headers (CSP, Referrer, Permissions), upload sanitization, HSTS, secure cookies.
 - [x] **GitOps Automation & CI/CD:** GitHub Actions workflows, pre-commit hooks, Conventional Commits, SemVer changelog.
-- [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
-- [ ] **Payment Gateway Integration:** Secure payment provider integration (e.g., Stripe).
+- [x] **Payment Gateway Integration:** Secure payment provider integration (Stripe & Card sandbox).
+- [x] **Promotions & Coupon Discounts:** Coupon codes with percentage or fixed discount, minimum spend, and usage limits.
+- [x] **Product Reviews & Star Ratings:** 1–5 star reviews with verified buyer badges and rating distributions.
+- [x] **Customer Wishlist:** Save items for later with AJAX toggle and dedicated portal.
+- [x] **Customer Address Book:** Stored addresses with 1-click checkout auto-fill.
+- [x] **Order Cancellation & Stock Replenishment:** Cancel pending orders with atomic stock restoration.
+- [x] **Transactional Emails:** Itemized HTML & plaintext confirmation receipts.
+- [x] **Database Seeding Tool:** Single command `seed_db` for instant development setup.
+- [ ] **Multi-Currency & Internationalization:** Dynamic currency switching and localization.
+- [ ] **Real-Time Order Tracking & Shipment Webhooks:** Carrier integration for live tracking updates.

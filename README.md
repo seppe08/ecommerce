@@ -24,7 +24,15 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
 - **Session-Backed Shopping Cart Engine:** Dynamic cart session engine with inventory bounds checking, navbar count badge, and asynchronous AJAX / form operations.
 - **Atomic Checkout & Customer Portal:** `transaction.atomic()` checkout with `select_for_update()` product locking, order lifecycle management, and print-ready invoices.
-- **100% Automated Test Suite:** 105 comprehensive unit, integration, and security tests covering authentication, registration, profile management, password recovery, product catalog, categories, gallery, shopping cart, atomic checkout, customer invoicing, security headers, file upload boundaries, and open-redirect defenses.
+- **Stripe & Card Payment Gateway:** Full checkout payment integration supporting Credit / Debit cards via Stripe with sandbox test card simulation, decline handling, Cash on Delivery option, and webhook processing.
+- **Promotions & Coupon Discounts:** High-flexibility discount engine supporting percentage-off and fixed-dollar coupons, date windows, minimum order spend, usage caps, and real-time cart redemption.
+- **Product Reviews & Customer Ratings:** 1–5 star customer reviews with verified buyer badges, average rating metrics, and distribution progress bars.
+- **Customer Wishlist & Saved Items:** Saved items portal (`/products/wishlist/`) with instantaneous AJAX heart toggle and "Move to Cart" actions.
+- **Saved Customer Address Book:** Customer address book with default address auto-filling during checkout and 1-click address selector chips.
+- **Order Cancellation & Stock Restoration:** Self-service order cancellation for pending orders with concurrency-safe inventory replenishment.
+- **Transactional Confirmation Emails:** Itemized HTML & plaintext order confirmation receipts automatically dispatched upon purchase.
+- **Database Seeder (`python manage.py seed_db`):** One-command database population with curated categories, products, reviews, coupons, and a demo account.
+- **100% Automated Test Suite:** 127 comprehensive unit, integration, and security tests covering authentication, registration, profile management, password recovery, product catalog, categories, gallery, shopping cart, atomic checkout, customer invoicing, security headers, file upload boundaries, open-redirect defenses, Stripe payments, coupons, reviews, wishlists, order cancellation, and emails.
 - **GitOps & CI/CD Automation:** Robust multi-step GitHub Actions CI pipelines (Ruff linting & formatting, Python 3.12 Django testing with `uv` caching, and deployment security audits), automated `pip-audit` and secret scanning, pre-commit hooks, Conventional Commits, and SemVer changelog.
 
 ---
@@ -40,6 +48,7 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 | **Configuration** | `django-environ` | `>= 0.14.0` | Twelve-factor configuration via `.env` |
 | **Image Processing**| `Pillow` | `>= 13.0.0` | Profile and product media processing |
 | **Database Driver** | `psycopg[binary]` | `>= 3.3.9` | High-efficiency PostgreSQL adapter |
+| **Payments** | `stripe` | `>= 11.0.0` | Payment gateway and webhook handling |
 | **Linter / Formatter**| `Ruff` | `>= 0.17.5` | Fast Python linter & code formatter |
 | **Frontend Styling**| `Tailwind CSS v4` | `^4.0.0` | Utility CSS & token architecture via `@tailwindcss/cli` |
 
