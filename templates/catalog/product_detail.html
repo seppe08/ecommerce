@@ -124,6 +124,20 @@
 
         <h1 class="product-title">{{ product.name }}</h1>
 
+        {% if review_count > 0 %}
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center gap-1 text-sm font-bold text-amber-500">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span>{{ average_rating }}</span>
+            </span>
+            <a href="#reviews-section" class="text-xs text-ink-3 hover:text-accent underline">
+              Based on {{ review_count }} review{{ review_count|pluralize }}
+            </a>
+          </div>
+        {% endif %}
+
         <div class="product-price-section">
           <span class="product-detail-price">${{ product.price }}</span>
           {% if product.is_in_stock %}
@@ -177,7 +191,7 @@
               </div>
 
               <!-- Dominant Add to Cart Button -->
-              <button type="submit" class="btn btn-primary btn-lg product-add-btn" aria-label="Add {{ product.name }} to cart">
+              <button type="submit" class="btn btn-primary btn-lg product-add-btn flex-1" aria-label="Add {{ product.name }} to cart">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="8" cy="21" r="1"></circle>
                   <circle cx="19" cy="21" r="1"></circle>
@@ -187,6 +201,23 @@
               </button>
             </div>
           </form>
+
+          {% if user.is_authenticated %}
+            <form method="post" action="{% url 'catalog:wishlist_toggle' product.id %}" class="mt-3">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button
+                type="submit"
+                class="w-full h-11 flex items-center justify-center gap-2 rounded-control border border-line bg-surface text-ink text-sm font-medium hover:bg-subtle transition-colors"
+                aria-label="Save to Wishlist"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="{% if user_in_wishlist %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" class="{% if user_in_wishlist %}text-error{% endif %}">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                </svg>
+                <span>{% if user_in_wishlist %}Saved in Wishlist (Click to remove){% else %}Save to Wishlist{% endif %}</span>
+              </button>
+            </form>
+          {% endif %}
         {% else %}
           <div class="product-out-of-stock-wrap">
             <button type="button" class="btn btn-secondary btn-block btn-lg" disabled aria-disabled="true">
@@ -311,6 +342,127 @@
     </div>
 
   </div>
+
+  <!-- Customer Reviews & Ratings Section -->
+  <section class="reviews-section my-12 pt-10 border-t border-line" id="reviews-section" aria-labelledby="reviews-heading">
+    <div class="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-10">
+      
+      <!-- Rating Summary Card -->
+      <div class="md:w-5/12 bg-surface rounded-card border border-line p-6 shadow-sm">
+        <h2 id="reviews-heading" class="text-xl font-bold text-ink mb-4">Customer Reviews</h2>
+
+        <div class="flex items-center gap-4 mb-6 pb-6 border-b border-line">
+          <div class="text-4xl font-extrabold text-ink tabular-nums">{{ average_rating }}</div>
+          <div>
+            <div class="flex items-center text-amber-500 mb-1">
+              {% for star in "12345" %}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              {% endfor %}
+            </div>
+            <span class="text-xs text-ink-3">Based on {{ review_count }} review{{ review_count|pluralize }}</span>
+          </div>
+        </div>
+
+        <!-- Rating Distribution Bars -->
+        <div class="space-y-2">
+          {% for star, data in rating_distribution.items %}
+            <div class="flex items-center gap-3 text-xs text-ink-2">
+              <span class="w-12 font-medium">{{ star }} star{{ star|pluralize }}</span>
+              <div class="flex-1 h-2 rounded-full bg-subtle overflow-hidden">
+                <div class="h-full bg-amber-500 rounded-full transition-all duration-300" style="width: {{ data.pct }}%;"></div>
+              </div>
+              <span class="w-8 text-right tabular-nums text-ink-3">{{ data.count }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Write a Review Card -->
+      <div class="md:w-7/12 bg-surface rounded-card border border-line p-6 shadow-sm">
+        <h3 class="text-lg font-semibold text-ink mb-2">Write a Review</h3>
+        {% if user.is_authenticated %}
+          <p class="text-xs text-ink-3 mb-4">Share your genuine experience with other shoppers.</p>
+          <form method="post" action="{% url 'catalog:add_review' product.slug %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+              <label for="{{ review_form.rating.id_for_label }}" class="block text-xs font-semibold text-ink mb-1">
+                Rating
+              </label>
+              {{ review_form.rating }}
+            </div>
+            <div>
+              <label for="{{ review_form.title.id_for_label }}" class="block text-xs font-semibold text-ink mb-1">
+                Headline
+              </label>
+              {{ review_form.title }}
+            </div>
+            <div>
+              <label for="{{ review_form.comment.id_for_label }}" class="block text-xs font-semibold text-ink mb-1">
+                Your Review
+              </label>
+              {{ review_form.comment }}
+            </div>
+            <button type="submit" class="btn btn-primary px-6 py-2.5 text-xs font-semibold rounded-control">
+              Submit Review
+            </button>
+          </form>
+        {% else %}
+          <div class="p-6 text-center rounded-control bg-subtle border border-line">
+            <p class="text-sm text-ink-2 mb-3">Please sign in to your AuraStore account to share a review.</p>
+            <a href="{% url 'login' %}?next={{ request.get_full_path }}#reviews-section" class="btn btn-primary text-xs px-4 py-2 rounded-control inline-block">
+              Sign In to Review
+            </a>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Review Comments List -->
+    {% if reviews %}
+      <div class="space-y-4">
+        <h3 class="text-base font-semibold text-ink mb-4">Verified Customer Feedback</h3>
+        <div class="divide-y divide-line rounded-card border border-line bg-surface overflow-hidden">
+          {% for rev in reviews %}
+            <div class="p-6 space-y-2">
+              <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-sm text-ink">{{ rev.user.first_name|default:rev.user.username }}</span>
+                  {% if rev.is_verified_purchase %}
+                    <span class="inline-flex items-center gap-1 text-[11px] font-medium text-success bg-success-subtle px-2 py-0.5 rounded-full">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Verified Purchase
+                    </span>
+                  {% endif %}
+                </div>
+                <span class="text-xs text-ink-3">{{ rev.created_at|date:"F d, Y" }}</span>
+              </div>
+
+              <!-- Star Rating -->
+              <div class="flex items-center text-amber-500">
+                {% for _ in "x"|rjust:rev.rating %}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                  </svg>
+                {% endfor %}
+              </div>
+
+              <h4 class="text-sm font-semibold text-ink">{{ rev.title }}</h4>
+              <p class="text-sm text-ink-2 leading-relaxed">{{ rev.comment|linebreaksbr }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="p-8 text-center rounded-card border border-line bg-surface text-ink-3">
+        <p class="text-sm">No reviews yet for this product. Be the first to share your thoughts!</p>
+      </div>
+    {% endif %}
+  </section>
 
   <!-- Related Products Section: Image-First Horizontal Rail -->
   {% if related_products %}

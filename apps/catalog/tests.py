@@ -444,3 +444,160 @@ class ProductDetailViewTests(TestCase):
         url = reverse("catalog:product_detail", kwargs={"slug": "does-not-exist"})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+
+
+class ReviewAndRatingTestCase(TestCase):
+    """
+    Tests for Review model, ratings calculation, verification, and submission views.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.user1 = User.objects.create_user(
+            username="reviewer1",
+            email="rev1@example.com",
+            password="Password123!",
+        )
+        self.user2 = User.objects.create_user(
+            username="reviewer2",
+            email="rev2@example.com",
+            password="Password123!",
+        )
+        self.category = Category.objects.create(name="Watches", slug="watches")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Chronograph Watch",
+            slug="chronograph-watch",
+            price=Decimal("350.00"),
+            sku="WATCH-001",
+            stock=10,
+        )
+
+    def test_review_ratings_and_aggregates(self):
+        from apps.catalog.models import Review
+
+        self.assertEqual(self.product.average_rating, 0.0)
+        self.assertEqual(self.product.review_count, 0)
+
+        Review.objects.create(
+            product=self.product,
+            user=self.user1,
+            rating=5,
+            title="Superb craftsmanship",
+            comment="Exceeded all my expectations.",
+        )
+        Review.objects.create(
+            product=self.product,
+            user=self.user2,
+            rating=4,
+            title="Very good watch",
+            comment="Comfortable strap and accurate timing.",
+        )
+
+        self.assertEqual(self.product.review_count, 2)
+        self.assertEqual(self.product.average_rating, 4.5)
+        dist = self.product.get_rating_distribution()
+        self.assertEqual(dist[5]["count"], 1)
+        self.assertEqual(dist[4]["count"], 1)
+        self.assertEqual(dist[3]["count"], 0)
+
+    def test_add_review_authenticated(self):
+        self.client.force_login(self.user1)
+        review_data = {
+            "rating": "5",
+            "title": "Incredible design",
+            "comment": "Looks even better in person than the photos.",
+        }
+        response = self.client.post(
+            reverse("catalog:add_review", kwargs={"slug": self.product.slug}),
+            review_data,
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        from apps.catalog.models import Review
+
+        rev = Review.objects.get(product=self.product, user=self.user1)
+        self.assertEqual(rev.rating, 5)
+        self.assertEqual(rev.title, "Incredible design")
+        self.assertContains(response, "Incredible design")
+
+    def test_add_review_unauthenticated_redirects(self):
+        response = self.client.post(
+            reverse("catalog:add_review", kwargs={"slug": self.product.slug}),
+            {"rating": "5", "title": "Test", "comment": "Test"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response.url)
+
+
+class WishlistTestCase(TestCase):
+    """
+    Tests for Wishlist model and customer toggle/listing views.
+    """
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="wishlistuser",
+            email="wishlist@example.com",
+            password="Password123!",
+        )
+        self.category = Category.objects.create(name="Living", slug="living")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Ceramic Vase",
+            slug="ceramic-vase",
+            price=Decimal("45.00"),
+            sku="VASE-001",
+            stock=15,
+        )
+
+    def test_wishlist_toggle_adds_and_removes(self):
+        self.client.force_login(self.user)
+        # 1. First toggle: add
+        response_add = self.client.post(
+            reverse("catalog:wishlist_toggle", kwargs={"product_id": self.product.id}),
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response_add.status_code, 200)
+        data_add = response_add.json()
+        self.assertTrue(data_add["success"])
+        self.assertTrue(data_add["in_wishlist"])
+        self.assertEqual(data_add["wishlist_count"], 1)
+
+        from apps.catalog.models import Wishlist
+
+        wishlist = Wishlist.objects.get(user=self.user)
+        self.assertIn(self.product, wishlist.products.all())
+
+        # 2. Second toggle: remove
+        response_remove = self.client.post(
+            reverse("catalog:wishlist_toggle", kwargs={"product_id": self.product.id}),
+            headers={"x-requested-with": "XMLHttpRequest"},
+        )
+        self.assertEqual(response_remove.status_code, 200)
+        data_remove = response_remove.json()
+        self.assertFalse(data_remove["in_wishlist"])
+        self.assertEqual(data_remove["wishlist_count"], 0)
+        self.assertNotIn(self.product, wishlist.products.all())
+
+    def test_wishlist_detail_view(self):
+        self.client.force_login(self.user)
+        from apps.catalog.models import Wishlist
+
+        wishlist = Wishlist.objects.create(user=self.user)
+        wishlist.products.add(self.product)
+
+        response = self.client.get(reverse("catalog:wishlist_detail"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ceramic Vase")
+        self.assertContains(response, "$45.00")
+
+    def test_wishlist_unauthenticated_redirects(self):
+        response = self.client.get(reverse("catalog:wishlist_detail"))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("login", response.url)

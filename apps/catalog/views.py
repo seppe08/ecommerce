@@ -1,8 +1,13 @@
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView
 
-from .models import Category, Product
+from .forms import ReviewForm
+from .models import Category, Product, Review, Wishlist
 
 
 class ProductListView(ListView):
@@ -95,4 +100,111 @@ class ProductDetailView(DetailView):
             .select_related("category")
             .prefetch_related("images")[:4]
         )
+        context["reviews"] = product.reviews.select_related("user").all()
+        context["review_count"] = product.review_count
+        context["average_rating"] = product.average_rating
+        context["rating_distribution"] = product.get_rating_distribution()
+        context["review_form"] = ReviewForm()
+        if self.request.user.is_authenticated:
+            context["user_review"] = product.reviews.filter(
+                user=self.request.user
+            ).first()
+            context["user_in_wishlist"] = Wishlist.objects.filter(
+                user=self.request.user, products=product
+            ).exists()
+        else:
+            context["user_review"] = None
+            context["user_in_wishlist"] = False
         return context
+
+
+@login_required
+@require_POST
+def add_review(request, slug):
+    """
+    Submit or update a product review.
+    Automatically checks if user has an order containing this product.
+    """
+    product = get_object_or_404(Product, slug=slug, is_active=True)
+    form = ReviewForm(request.POST)
+
+    if form.is_valid():
+        from apps.orders.models import Order
+
+        is_verified = Order.objects.filter(
+            user=request.user,
+            items__product=product,
+            paid=True,
+        ).exists()
+
+        Review.objects.update_or_create(
+            product=product,
+            user=request.user,
+            defaults={
+                "rating": int(form.cleaned_data["rating"]),
+                "title": form.cleaned_data["title"],
+                "comment": form.cleaned_data["comment"],
+                "is_verified_purchase": is_verified,
+            },
+        )
+        messages.success(request, "Thank you! Your product review has been submitted.")
+    else:
+        messages.error(request, "Please check your review form inputs.")
+
+    return redirect("catalog:product_detail", slug=product.slug)
+
+
+@login_required
+@require_POST
+def wishlist_toggle(request, product_id):
+    """
+    Toggle a product in the user's wishlist via AJAX or standard POST.
+    """
+    product = get_object_or_404(Product, id=product_id, is_active=True)
+    wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+
+    if wishlist.products.filter(id=product.id).exists():
+        wishlist.products.remove(product)
+        in_wishlist = False
+        msg = f'"{product.name}" was removed from your wishlist.'
+    else:
+        wishlist.products.add(product)
+        in_wishlist = True
+        msg = f'"{product.name}" was saved to your wishlist.'
+
+    messages.info(request, msg)
+
+    is_ajax_req = request.headers.get(
+        "x-requested-with"
+    ) == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", "")
+    if is_ajax_req:
+        return JsonResponse(
+            {
+                "success": True,
+                "in_wishlist": in_wishlist,
+                "wishlist_count": wishlist.products.count(),
+                "message": msg,
+            }
+        )
+
+    return redirect(request.POST.get("next") or product.get_absolute_url())
+
+
+@login_required
+def wishlist_detail(request):
+    """
+    Customer portal view displaying all saved wishlist items.
+    """
+    wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+    products = (
+        wishlist.products.filter(is_active=True)
+        .select_related("category")
+        .prefetch_related("images")
+    )
+
+    context = {
+        "products": products,
+        "wishlist_count": products.count(),
+        "page_title": "My Wishlist — AuraStore",
+    }
+    return render(request, "catalog/wishlist.html", context)

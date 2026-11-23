@@ -3,7 +3,7 @@ from typing import ClassVar
 from django.contrib import admin
 from django.db.models import Count
 
-from .models import Category, Product, ProductImage
+from .models import Category, Product, ProductImage, Review, Wishlist
 
 
 class ProductImageInline(admin.TabularInline):
@@ -46,6 +46,31 @@ class ProductAdmin(admin.ModelAdmin):
     list_editable = ("price", "stock", "is_active", "featured")
     inlines = (ProductImageInline,)
     date_hierarchy = "created_at"
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        "product",
+        "user",
+        "rating",
+        "title",
+        "is_verified_purchase",
+        "created_at",
+    )
+    list_filter = ("rating", "is_verified_purchase", "created_at")
+    search_fields = ("product__name", "user__username", "title", "comment")
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ("user", "product_count", "created_at")
+    search_fields = ("user__username",)
+
+    def product_count(self, obj):
+        return obj.products.count()
+
+    product_count.short_description = "Saved Products"
 
 
 @admin.register(ProductImage)
