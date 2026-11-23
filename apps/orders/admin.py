@@ -1,6 +1,24 @@
 from django.contrib import admin
 
-from .models import Order, OrderItem
+from .models import Coupon, Order, OrderItem
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = (
+        "code",
+        "discount_type",
+        "discount_value",
+        "min_purchase_amount",
+        "valid_from",
+        "valid_to",
+        "times_used",
+        "usage_limit",
+        "is_active",
+    )
+    list_filter = ("is_active", "discount_type", "valid_from", "valid_to")
+    search_fields = ("code",)
+    readonly_fields = ("times_used", "created_at")
 
 
 class OrderItemInline(admin.TabularInline):
@@ -23,15 +41,26 @@ class OrderAdmin(admin.ModelAdmin):
         "order_number",
         "full_name",
         "email",
+        "payment_method",
         "status",
         "paid",
         "order_total_display",
         "created_at",
     )
-    list_filter = ("status", "paid", "created_at")
-    search_fields = ("order_number", "first_name", "last_name", "email", "phone")
+    list_filter = ("payment_method", "status", "paid", "created_at")
+    search_fields = (
+        "order_number",
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "stripe_payment_intent_id",
+    )
     readonly_fields = (
         "order_number",
+        "stripe_payment_intent_id",
+        "coupon",
+        "discount",
         "created_at",
         "updated_at",
         "order_total_display",

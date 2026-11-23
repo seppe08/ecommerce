@@ -60,6 +60,23 @@
           Shipping &amp; Contact Information
         </h2>
 
+        {% if saved_addresses %}
+          <div class="mb-5 p-3.5 rounded-control bg-subtle border border-line text-xs text-ink-2">
+            <span class="font-semibold text-ink block mb-2">Quick Auto-Fill From Saved Addresses:</span>
+            <div class="flex flex-wrap gap-2">
+              {% for addr in saved_addresses %}
+                <button
+                  type="button"
+                  class="px-2.5 py-1 rounded bg-surface border border-line text-ink hover:border-line-strong text-xs cursor-pointer shadow-2xs"
+                  onclick="document.getElementById('{{ form.first_name.id_for_label }}').value='{{ user.first_name }}'; document.getElementById('{{ form.last_name.id_for_label }}').value='{{ user.last_name }}'; document.getElementById('{{ form.address.id_for_label }}').value='{{ addr.address|escapejs }}'; document.getElementById('{{ form.city.id_for_label }}').value='{{ addr.city|escapejs }}'; document.getElementById('{{ form.postal_code.id_for_label }}').value='{{ addr.postal_code|escapejs }}'; document.getElementById('{{ form.country.id_for_label }}').value='{{ addr.country|escapejs }}'; if('{{ addr.phone }}') document.getElementById('{{ form.phone.id_for_label }}').value='{{ addr.phone|escapejs }}';"
+                >
+                  📍 {{ addr.full_name }} ({{ addr.city }})
+                </button>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
         <form method="post" action="{% url 'orders:order_create' %}" class="checkout-form" novalidate id="checkout-form">
           {% csrf_token %}
 
@@ -231,6 +248,39 @@
             </div>
           </div>
 
+          {% if user.is_authenticated %}
+            <!-- Save Address Checkbox -->
+            <div class="form-group mt-3">
+              <label class="flex items-center gap-2 cursor-pointer text-sm text-ink-2">
+                <input type="checkbox" name="save_address" value="1" class="form-checkbox rounded text-accent focus:ring-accent">
+                <span>Save this address to my address book for faster checkout</span>
+              </label>
+            </div>
+          {% endif %}
+
+          <!-- Payment Method Selection -->
+          <div class="form-group mt-6 pt-4 border-t border-line">
+            <label class="form-label block text-base font-semibold text-ink mb-3">
+              Payment Method <span class="required-mark" aria-hidden="true">*</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Payment Method">
+              <label class="flex items-center gap-3 p-3.5 rounded-control border border-line bg-surface hover:bg-subtle cursor-pointer transition-colors">
+                <input type="radio" name="payment_method" value="stripe" checked class="text-accent focus:ring-accent">
+                <div class="min-w-0">
+                  <span class="block font-medium text-ink text-sm">Credit / Debit Card</span>
+                  <span class="block text-xs text-ink-3">Instant checkout via Stripe (256-bit SSL)</span>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3.5 rounded-control border border-line bg-surface hover:bg-subtle cursor-pointer transition-colors">
+                <input type="radio" name="payment_method" value="cod" class="text-accent focus:ring-accent">
+                <div class="min-w-0">
+                  <span class="block font-medium text-ink text-sm">Cash on Delivery</span>
+                  <span class="block text-xs text-ink-3">Pay upon arrival of order</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <div class="checkout-submit-wrap">
             <button type="submit" class="btn btn-primary btn-lg btn-block" id="place-order-button" aria-label="Place Order and finalize purchase">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -309,6 +359,12 @@
             <span class="summary-label">Subtotal</span>
             <span class="summary-value">${{ subtotal }}</span>
           </div>
+          {% if discount %}
+            <div class="summary-row text-success font-medium">
+              <span class="summary-label">Discount ({{ coupon.code }})</span>
+              <span class="summary-value">-${{ discount }}</span>
+            </div>
+          {% endif %}
           <div class="summary-row">
             <span class="summary-label">Shipping</span>
             <span class="summary-value text-success">Free</span>
@@ -320,7 +376,7 @@
           <div class="summary-divider" role="separator"></div>
           <div class="summary-row summary-total-row">
             <span class="summary-total-label">Total Amount</span>
-            <span class="summary-total-value">${{ subtotal }}</span>
+            <span class="summary-total-value">${{ total }}</span>
           </div>
         </div>
 

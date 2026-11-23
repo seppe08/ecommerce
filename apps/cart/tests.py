@@ -277,3 +277,130 @@ class CartViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         session = self.client.session
         self.assertNotIn(str(self.product.id), session.get(CART_SESSION_ID, {}))
+
+
+class CouponIntegrationTestCase(TestCase):
+    """
+    Tests for Coupon model validation, Cart discount application, and Order linkage.
+    """
+
+    def setUp(self):
+        from django.utils import timezone
+
+        from apps.orders.models import Coupon
+
+        self.category = Category.objects.create(name="Accessories", slug="accessories")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Leather Belt",
+            slug="leather-belt",
+            price=Decimal("50.00"),
+            sku="BELT-001",
+            stock=20,
+        )
+        self.coupon_percent = Coupon.objects.create(
+            code="SAVE20",
+            discount_type=Coupon.DISCOUNT_TYPE_PERCENT,
+            discount_value=Decimal("20.00"),
+            valid_from=timezone.now() - timezone.timedelta(days=1),
+            valid_to=timezone.now() + timezone.timedelta(days=10),
+            is_active=True,
+        )
+        self.coupon_fixed = Coupon.objects.create(
+            code="FLAT15",
+            discount_type=Coupon.DISCOUNT_TYPE_FIXED,
+            discount_value=Decimal("15.00"),
+            min_purchase_amount=Decimal("40.00"),
+            valid_from=timezone.now() - timezone.timedelta(days=1),
+            valid_to=timezone.now() + timezone.timedelta(days=10),
+            is_active=True,
+        )
+        self.coupon_expired = Coupon.objects.create(
+            code="EXPIRED",
+            discount_type=Coupon.DISCOUNT_TYPE_FIXED,
+            discount_value=Decimal("10.00"),
+            valid_from=timezone.now() - timezone.timedelta(days=20),
+            valid_to=timezone.now() - timezone.timedelta(days=1),
+            is_active=True,
+        )
+
+    def test_coupon_calculations(self):
+        # 20% off 50.00 = 10.00
+        discount = self.coupon_percent.calculate_discount(Decimal("50.00"))
+        self.assertEqual(discount, Decimal("10.00"))
+
+        # Flat 15.00 off 50.00 = 15.00
+        discount_fixed = self.coupon_fixed.calculate_discount(Decimal("50.00"))
+        self.assertEqual(discount_fixed, Decimal("15.00"))
+
+    def test_coupon_validations(self):
+        valid, _ = self.coupon_percent.is_valid(Decimal("50.00"))
+        self.assertTrue(valid)
+
+        # Min spend check
+        valid_low, err_low = self.coupon_fixed.is_valid(Decimal("30.00"))
+        self.assertFalse(valid_low)
+        self.assertIn("Minimum cart subtotal", err_low)
+
+        # Expired check
+        valid_exp, err_exp = self.coupon_expired.is_valid(Decimal("50.00"))
+        self.assertFalse(valid_exp)
+        self.assertIn("expired", err_exp)
+
+    def test_coupon_apply_and_remove_view(self):
+        # Add item to cart
+        self.client.post(
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 1},
+        )
+        # Apply coupon
+        response = self.client.post(
+            reverse("cart:coupon_apply"),
+            {"code": "SAVE20"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "SAVE20")
+        self.assertContains(response, "-$10.00")
+        self.assertContains(response, "$40.00")
+
+        # Remove coupon
+        response_remove = self.client.post(
+            reverse("cart:coupon_remove"),
+            follow=True,
+        )
+        self.assertEqual(response_remove.status_code, 200)
+        self.assertContains(response_remove, "Coupon discount removed.")
+        self.assertContains(response_remove, "$50.00")
+
+    def test_order_creation_attaches_coupon_and_increments_usage(self):
+        # Add item to cart and apply coupon
+        self.client.post(
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 2},  # Total 100.00
+        )
+        self.client.post(reverse("cart:coupon_apply"), {"code": "SAVE20"})
+
+        from apps.orders.models import Order
+
+        checkout_data = {
+            "first_name": "Coupon",
+            "last_name": "User",
+            "email": "coupon@example.com",
+            "address": "123 Promo St",
+            "city": "Discount City",
+            "postal_code": "12345",
+            "country": "United States",
+            "payment_method": "cod",
+        }
+        response = self.client.post(reverse("orders:order_create"), checkout_data)
+        self.assertEqual(response.status_code, 302)
+
+        order = Order.objects.first()
+        self.assertIsNotNone(order)
+        self.assertEqual(order.coupon, self.coupon_percent)
+        self.assertEqual(order.discount, Decimal("20.00"))
+        self.assertEqual(order.get_total_cost(), Decimal("80.00"))
+
+        self.coupon_percent.refresh_from_db()
+        self.assertEqual(self.coupon_percent.times_used, 1)

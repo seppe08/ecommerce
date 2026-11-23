@@ -8,6 +8,7 @@ dependencies = [
     "pillow>=13.0.0",
     "psycopg[binary]>=3.3.9",
     "ruff>=0.17.5",
+    "stripe>=17.1.0",
 ]
 
 [tool.ruff.lint.per-file-ignores]

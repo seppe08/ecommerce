@@ -44,6 +44,20 @@
           <span class="btn-label">Back to Orders</span>
         </a>
       {% endif %}
+
+      {% if order.status == "pending" and user.is_authenticated and order.user == user %}
+        <form method="post" action="{% url 'orders:order_cancel' order.order_number %}" onsubmit="return confirm('Are you sure you want to cancel this order? This will release reserved items back into stock.');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-secondary text-error border-error hover:bg-error-subtle cursor-pointer" aria-label="Cancel this order">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="15" y1="9" x2="9" y2="15"></line>
+              <line x1="9" y1="9" x2="15" y2="15"></line>
+            </svg>
+            <span class="btn-label">Cancel Order</span>
+          </button>
+        </form>
+      {% endif %}
     </div>
   </div>
 
@@ -79,11 +93,17 @@
         <div class="invoice-meta-item">
           <span class="meta-label">Payment:</span>
           {% if order.paid %}
-            <span class="badge badge-success">Paid</span>
+            <span class="badge badge-success">Paid ({{ order.get_payment_method_display }})</span>
           {% else %}
-            <span class="badge badge-warning">Pending Payment</span>
+            <span class="badge badge-warning">Pending Payment ({{ order.get_payment_method_display }})</span>
           {% endif %}
         </div>
+        {% if order.stripe_payment_intent_id %}
+        <div class="invoice-meta-item">
+          <span class="meta-label">Transaction ID:</span>
+          <span class="meta-value font-mono text-xs">{{ order.stripe_payment_intent_id }}</span>
+        </div>
+        {% endif %}
       </div>
     </div>
 
@@ -144,8 +164,14 @@
       <div class="invoice-totals-table">
         <div class="invoice-total-row">
           <span class="total-label">Subtotal:</span>
-          <span class="total-value">${{ order.get_total_cost }}</span>
+          <span class="total-value">${{ order.get_subtotal_cost }}</span>
         </div>
+        {% if order.discount %}
+        <div class="invoice-total-row text-success font-medium">
+          <span class="total-label">Discount {% if order.coupon %}({{ order.coupon.code }}){% endif %}:</span>
+          <span class="total-value">-${{ order.discount }}</span>
+        </div>
+        {% endif %}
         <div class="invoice-total-row">
           <span class="total-label">Shipping &amp; Handling:</span>
           <span class="total-value text-success">Free</span>

@@ -5,12 +5,13 @@ from django.conf import settings
 from apps.catalog.models import Product
 
 CART_SESSION_ID = getattr(settings, "CART_SESSION_ID", "cart")
+COUPON_SESSION_ID = "coupon_id"
 
 
 class Cart:
     """
     Session-backed shopping cart engine managing item quantities,
-    line totals, and session persistence.
+    line totals, discount calculations, and session persistence.
     """
 
     def __init__(self, request):
@@ -19,6 +20,58 @@ class Cart:
         if not cart:
             cart = self.session[CART_SESSION_ID] = {}
         self.cart = cart
+        self.coupon_id = self.session.get(COUPON_SESSION_ID)
+
+    @property
+    def coupon(self):
+        """
+        Retrieve and validate currently applied coupon from session.
+        """
+        if self.coupon_id:
+            from apps.orders.models import Coupon
+
+            try:
+                coupon = Coupon.objects.get(id=self.coupon_id)
+                valid, _ = coupon.is_valid(self.get_total_price())
+                if valid:
+                    return coupon
+                # Purge invalid/expired coupon
+                self.remove_coupon()
+            except Coupon.DoesNotExist:
+                self.remove_coupon()
+        return None
+
+    def apply_coupon(self, coupon):
+        """
+        Store coupon id in session and update instance.
+        """
+        self.coupon_id = coupon.id
+        self.session[COUPON_SESSION_ID] = coupon.id
+        self.save()
+
+    def remove_coupon(self):
+        """
+        Remove coupon id from session and reset instance.
+        """
+        self.coupon_id = None
+        if COUPON_SESSION_ID in self.session:
+            del self.session[COUPON_SESSION_ID]
+            self.save()
+
+    def get_discount(self):
+        """
+        Calculate discount amount based on active coupon.
+        """
+        coupon = self.coupon
+        if coupon:
+            return coupon.calculate_discount(self.get_total_price())
+        return Decimal("0.00")
+
+    def get_total_price_after_discount(self):
+        """
+        Calculate subtotal minus active coupon discount.
+        """
+        return max(Decimal("0.00"), self.get_total_price() - self.get_discount())
 
     def add(self, product, quantity=1, override_quantity=False):
         """
@@ -110,6 +163,9 @@ class Cart:
         Empty the cart and remove it from the session.
         """
         self.cart = {}
+        self.coupon_id = None
         if CART_SESSION_ID in self.session:
             del self.session[CART_SESSION_ID]
-            self.save()
+        if COUPON_SESSION_ID in self.session:
+            del self.session[COUPON_SESSION_ID]
+        self.save()

@@ -325,3 +325,320 @@ class OrderAdminTestCase(TestCase):
             admin.mark_as_shipped(None, qs)
             self.order.refresh_from_db()
             self.assertEqual(self.order.status, Order.STATUS_SHIPPED)
+
+
+class OrderPaymentIntegrationTestCase(TestCase):
+    """
+    Comprehensive tests for Stripe & Card payment workflows, sandbox processing,
+    permission controls, and webhooks.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="shopper1",
+            email="shopper1@example.com",
+            password="Password123!",
+            first_name="Shopper",
+            last_name="One",
+        )
+        self.intruder = User.objects.create_user(
+            username="intruder",
+            email="intruder@example.com",
+            password="Password123!",
+        )
+        self.category = Category.objects.create(name="Apparel", slug="apparel")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Classic Hoodie",
+            slug="classic-hoodie",
+            price=Decimal("65.00"),
+            sku="HOOD-001",
+            stock=10,
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            first_name="Shopper",
+            last_name="One",
+            email="shopper1@example.com",
+            address="789 Park Ave",
+            city="New York",
+            postal_code="10021",
+            country="United States",
+            payment_method="stripe",
+        )
+        OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            price=Decimal("65.00"),
+            quantity=1,
+        )
+
+    def test_order_payment_get_authorized_user(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.order.order_number)
+        self.assertContains(response, "Credit / Debit Card Payment")
+        self.assertContains(response, "Pay $65.00 Now")
+
+    def test_order_payment_get_unauthorized_user_forbidden(self):
+        self.client.force_login(self.intruder)
+        response = self.client.get(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            )
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_order_payment_successful_card_submission(self):
+        self.client.force_login(self.user)
+        card_data = {
+            "cardholder_name": "Shopper One",
+            "card_number": "4242 4242 4242 4242",
+            "expiry": "12/28",
+            "cvc": "123",
+        }
+        response = self.client.post(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            ),
+            card_data,
+        )
+        self.assertRedirects(
+            response,
+            reverse("orders:order_created", kwargs={"order_id": self.order.id}),
+        )
+        self.order.refresh_from_db()
+        self.assertTrue(self.order.paid)
+        self.assertEqual(self.order.status, Order.STATUS_PAID)
+        self.assertTrue(self.order.stripe_payment_intent_id.startswith("pi_mock_"))
+
+    def test_order_payment_declined_card_simulation(self):
+        self.client.force_login(self.user)
+        declined_card_data = {
+            "cardholder_name": "Shopper One",
+            "card_number": "4000 0000 0000 0002",
+            "expiry": "12/28",
+            "cvc": "123",
+        }
+        response = self.client.post(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            ),
+            declined_card_data,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Your card was declined by the issuer")
+        self.order.refresh_from_db()
+        self.assertFalse(self.order.paid)
+        self.assertEqual(self.order.status, Order.STATUS_PENDING)
+
+    def test_order_payment_switch_to_cash_on_delivery(self):
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            ),
+            {"switch_to_cod": "1"},
+        )
+        self.assertRedirects(
+            response,
+            reverse("orders:order_created", kwargs={"order_id": self.order.id}),
+        )
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.payment_method, "cod")
+        self.assertFalse(self.order.paid)
+
+    def test_order_payment_already_paid_redirects(self):
+        self.client.force_login(self.user)
+        self.order.mark_as_paid("pi_mock_existing123")
+        response = self.client.get(
+            reverse(
+                "orders:order_payment", kwargs={"order_number": self.order.order_number}
+            )
+        )
+        self.assertRedirects(
+            response,
+            reverse("orders:order_created", kwargs={"order_id": self.order.id}),
+        )
+
+    def test_stripe_webhook_successful_payment_intent(self):
+        payload = {
+            "type": "payment_intent.succeeded",
+            "data": {
+                "object": {
+                    "id": "pi_webhook_test_999",
+                    "metadata": {"order_number": self.order.order_number},
+                }
+            },
+        }
+        import json
+
+        response = self.client.post(
+            reverse("orders:stripe_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.assertTrue(self.order.paid)
+        self.assertEqual(self.order.status, Order.STATUS_PAID)
+        self.assertEqual(self.order.stripe_payment_intent_id, "pi_webhook_test_999")
+
+
+class OrderFulfillmentAndAddressTestCase(TestCase):
+    """
+    Tests for order cancellation with inventory replenishment, transactional confirmation
+    emails, and customer saved address auto-creation.
+    """
+
+    def setUp(self):
+        from apps.catalog.models import Category, Product
+
+        self.user = User.objects.create_user(
+            username="buyer1",
+            email="buyer1@example.com",
+            password="Password123!",
+            first_name="Buyer",
+            last_name="One",
+        )
+        self.intruder = User.objects.create_user(
+            username="intruder2",
+            email="intruder2@example.com",
+            password="Password123!",
+        )
+        self.category = Category.objects.create(name="Shoes", slug="shoes")
+        self.product = Product.objects.create(
+            category=self.category,
+            name="Trail Runners",
+            slug="trail-runners",
+            price=Decimal("110.00"),
+            sku="RUN-001",
+            stock=8,
+        )
+        self.order = Order.objects.create(
+            user=self.user,
+            first_name="Buyer",
+            last_name="One",
+            email="buyer1@example.com",
+            address="100 Trail Way",
+            city="Denver",
+            postal_code="80201",
+            country="United States",
+            status=Order.STATUS_PENDING,
+            payment_method="cod",
+        )
+        OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            price=Decimal("110.00"),
+            quantity=2,
+        )
+
+    def test_order_cancel_restores_inventory_stock(self):
+        self.client.force_login(self.user)
+        initial_stock = self.product.stock  # 8
+
+        response = self.client.post(
+            reverse(
+                "orders:order_cancel", kwargs={"order_number": self.order.order_number}
+            ),
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_CANCELLED)
+
+        # Inventory replenished by 2
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, initial_stock + 2)
+
+    def test_order_cancel_rejected_if_not_pending(self):
+        self.client.force_login(self.user)
+        self.order.status = Order.STATUS_SHIPPED
+        self.order.save()
+
+        response = self.client.post(
+            reverse(
+                "orders:order_cancel", kwargs={"order_number": self.order.order_number}
+            ),
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, Order.STATUS_SHIPPED)
+
+    def test_order_cancel_unauthorized_forbidden(self):
+        self.client.force_login(self.intruder)
+        response = self.client.post(
+            reverse(
+                "orders:order_cancel", kwargs={"order_number": self.order.order_number}
+            ),
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_order_confirmation_email_sent_on_checkout(self):
+        from django.core import mail
+
+        from apps.cart.cart import CART_SESSION_ID
+
+        # Put item in cart
+        session = self.client.session
+        session[CART_SESSION_ID] = {
+            str(self.product.id): {"quantity": 1, "price": "110.00"}
+        }
+        session.save()
+
+        mail.outbox.clear()
+        form_data = {
+            "first_name": "Buyer",
+            "last_name": "One",
+            "email": "buyer1@example.com",
+            "address": "100 Trail Way",
+            "city": "Denver",
+            "postal_code": "80201",
+            "country": "United States",
+            "payment_method": "cod",
+        }
+        response = self.client.post(reverse("orders:order_create"), form_data)
+        self.assertEqual(response.status_code, 302)
+
+        # Mail was dispatched
+        self.assertEqual(len(mail.outbox), 1)
+        sent_email = mail.outbox[0]
+        self.assertIn("Order Confirmation", sent_email.subject)
+        self.assertIn("buyer1@example.com", sent_email.to)
+        self.assertIn("Trail Runners", sent_email.body)
+
+    def test_checkout_save_address(self):
+        from apps.accounts.models import Address
+        from apps.cart.cart import CART_SESSION_ID
+
+        self.client.force_login(self.user)
+        session = self.client.session
+        session[CART_SESSION_ID] = {
+            str(self.product.id): {"quantity": 1, "price": "110.00"}
+        }
+        session.save()
+
+        form_data = {
+            "first_name": "Buyer",
+            "last_name": "One",
+            "email": "buyer1@example.com",
+            "address": "500 Mountain Rd",
+            "city": "Boulder",
+            "postal_code": "80301",
+            "country": "United States",
+            "payment_method": "cod",
+            "save_address": "1",
+        }
+        response = self.client.post(reverse("orders:order_create"), form_data)
+        self.assertEqual(response.status_code, 302)
+
+        addr = Address.objects.filter(user=self.user, address="500 Mountain Rd").first()
+        self.assertIsNotNone(addr)
+        self.assertEqual(addr.city, "Boulder")

@@ -67,12 +67,18 @@
         <span class="reference-label">Payment Status</span>
         <span class="reference-val">
           {% if order.paid %}
-            <span class="badge badge-success">Paid</span>
+            <span class="badge badge-success">Paid ({% if order.payment_method == "stripe" %}Card / Stripe{% else %}{{ order.get_payment_method_display }}{% endif %})</span>
           {% else %}
-            <span class="badge badge-warning">Pending Payment</span>
+            <span class="badge badge-warning">Pending Payment ({{ order.get_payment_method_display }})</span>
           {% endif %}
         </span>
       </div>
+      {% if order.stripe_payment_intent_id %}
+      <div class="reference-item">
+        <span class="reference-label">Payment Ref</span>
+        <span class="reference-val font-mono text-xs">{{ order.stripe_payment_intent_id }}</span>
+      </div>
+      {% endif %}
       <div class="reference-item">
         <span class="reference-label">Fulfillment Status</span>
         <span class="reference-val">
@@ -163,8 +169,14 @@
       <div class="invoice-totals-table">
         <div class="invoice-total-row">
           <span class="total-label">Subtotal:</span>
-          <span class="total-value">${{ order.get_total_cost }}</span>
+          <span class="total-value">${{ order.get_subtotal_cost }}</span>
         </div>
+        {% if order.discount %}
+        <div class="invoice-total-row text-success font-medium">
+          <span class="total-label">Discount {% if order.coupon %}({{ order.coupon.code }}){% endif %}:</span>
+          <span class="total-value">-${{ order.discount }}</span>
+        </div>
+        {% endif %}
         <div class="invoice-total-row">
           <span class="total-label">Shipping:</span>
           <span class="total-value text-success">Free</span>

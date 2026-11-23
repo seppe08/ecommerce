@@ -134,3 +134,10 @@ CSRF_COOKIE_SAMESITE = "Lax"
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+
+# Stripe Payment Gateway Configuration
+STRIPE_PUBLISHABLE_KEY = env(
+    "STRIPE_PUBLISHABLE_KEY", default="pk_test_aurastore_mock_key"
+)
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="sk_test_aurastore_mock_key")
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")

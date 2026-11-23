@@ -23,22 +23,97 @@ def is_ajax(request):
 def cart_detail(request):
     """
     Display the shopping cart with full breakdown of items, unit prices,
-    quantities, line totals, tax calculation, and checkout CTA.
+    quantities, line totals, discounts, tax calculation, and checkout CTA.
     """
     cart = Cart(request)
     subtotal = cart.get_total_price()
-    # Standard estimate: 0% sales tax or configurable flat calculation
+    discount = cart.get_discount()
+    coupon = cart.coupon
     estimated_tax = Decimal("0.00")
-    total = subtotal + estimated_tax
+    total = cart.get_total_price_after_discount() + estimated_tax
 
     context = {
         "cart": cart,
         "subtotal": subtotal,
+        "discount": discount,
+        "coupon": coupon,
         "estimated_tax": estimated_tax,
         "total": total,
         "page_title": "Your Shopping Cart — AuraStore",
     }
     return render(request, "cart/cart_detail.html", context)
+
+
+@require_POST
+def coupon_apply(request):
+    """
+    Validate and apply a promotional coupon code to the user's cart session.
+    """
+    from apps.orders.models import Coupon
+
+    cart = Cart(request)
+    code = request.POST.get("code", "").strip()
+
+    if not code:
+        messages.warning(request, "Please enter a coupon code.")
+        return redirect("cart:cart_detail")
+
+    try:
+        coupon = Coupon.objects.get(code__iexact=code)
+        is_valid, error_msg = coupon.is_valid(cart.get_total_price())
+        if not is_valid:
+            messages.error(request, error_msg)
+            if is_ajax(request):
+                return JsonResponse(
+                    {"success": False, "message": error_msg}, status=400
+                )
+            return redirect("cart:cart_detail")
+
+        cart.apply_coupon(coupon)
+        discount = cart.get_discount()
+        msg = f'Coupon "{coupon.code}" applied! You saved ${discount:.2f}.'
+        messages.success(request, msg)
+
+        if is_ajax(request):
+            return JsonResponse(
+                {
+                    "success": True,
+                    "message": msg,
+                    "code": coupon.code,
+                    "discount": f"{discount:.2f}",
+                    "cart_total": f"{cart.get_total_price_after_discount():.2f}",
+                }
+            )
+
+    except Coupon.DoesNotExist:
+        error_msg = f'Coupon "{code}" is invalid or does not exist.'
+        messages.error(request, error_msg)
+        if is_ajax(request):
+            return JsonResponse({"success": False, "message": error_msg}, status=404)
+
+    return redirect("cart:cart_detail")
+
+
+@require_POST
+def coupon_remove(request):
+    """
+    Remove currently applied coupon code from cart session.
+    """
+    cart = Cart(request)
+    cart.remove_coupon()
+    msg = "Coupon discount removed."
+    messages.info(request, msg)
+
+    if is_ajax(request):
+        return JsonResponse(
+            {
+                "success": True,
+                "message": msg,
+                "cart_total": f"{cart.get_total_price():.2f}",
+            }
+        )
+
+    return redirect("cart:cart_detail")
 
 
 @require_POST

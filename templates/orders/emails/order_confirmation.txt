@@ -1,0 +1,29 @@
+Dear {{ order.full_name }},
+
+Thank you for your order with AuraStore!
+Order Number: {{ order.order_number }}
+Date: {{ order.created_at|date:"F d, Y" }}
+Payment Method: {{ order.get_payment_method_display }}
+Payment Status: {% if order.paid %}Paid{% else %}Pending Payment{% endif %}
+
+ORDER SUMMARY:
+{% for item in order.items.all %}
+- {{ item.quantity }}x {{ item.product.name }} (SKU: {{ item.product.sku }}) - ${{ item.get_cost }}
+{% endfor %}
+
+Subtotal: ${{ order.get_subtotal_cost }}
+{% if order.discount %}Discount: -${{ order.discount }}{% endif %}
+Shipping: Free
+Total: ${{ order.get_total_cost }}
+
+SHIPPING ADDRESS:
+{{ order.full_name }}
+{{ order.address }}
+{{ order.city }}, {{ order.postal_code }}
+{{ order.country }}
+
+Track your order anytime at:
+https://aurastore.com/orders/{{ order.order_number }}/
+
+Warm regards,
+The AuraStore Team
