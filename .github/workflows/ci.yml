@@ -68,7 +68,6 @@ jobs:
     env:
       SECRET_KEY: "ci-insecure-test-key-strictly-for-automated-github-actions-testing"
       DEBUG: "False"
-      SECURE_SSL_REDIRECT: "True"
       DB_ENGINE: "django.db.backends.sqlite3"
       DB_NAME: "ci_test_db"
       ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
@@ -92,6 +91,8 @@ jobs:
         run: uv run python manage.py makemigrations --check --dry-run
 
       - name: Run Django Deployment Security Check
+        env:
+          SECURE_SSL_REDIRECT: "True"
         run: uv run python manage.py check --deploy
 
       - name: Run Django Test Suite
