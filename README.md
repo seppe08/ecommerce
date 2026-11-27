@@ -22,8 +22,6 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **Session Flexibility:** 30-day persistent session support via "Remember Me", or secure browser-close expiry.
 - **High-Empathy UI/UX:** Inline field-anchored errors, live loading spinner states on submission to prevent double clicks, and accessible password visibility toggles.
 - **WCAG 2.1 AA Accessibility:** Minimum 44×44px interactive touch targets, visible keyboard focus rings (`:focus-visible`), skip-to-content links, and full ARIA semantics.
-- **Session-Backed Shopping Cart Engine:** Dynamic cart session engine with inventory bounds checking, navbar count badge, and asynchronous AJAX / form operations.
-- **Atomic Checkout & Customer Portal:** `transaction.atomic()` checkout with `select_for_update()` product locking, order lifecycle management, and print-ready invoices.
 - **Stripe & Card Payment Gateway:** Full checkout payment integration supporting Credit / Debit cards via Stripe with sandbox test card simulation, decline handling, Cash on Delivery option, and webhook processing.
 - **Promotions & Coupon Discounts:** High-flexibility discount engine supporting percentage-off and fixed-dollar coupons, date windows, minimum order spend, usage caps, and real-time cart redemption.
 - **Product Reviews & Customer Ratings:** 1–5 star customer reviews with verified buyer badges, average rating metrics, and distribution progress bars.
@@ -32,7 +30,7 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 - **Order Cancellation & Stock Restoration:** Self-service order cancellation for pending orders with concurrency-safe inventory replenishment.
 - **Transactional Confirmation Emails:** Itemized HTML & plaintext order confirmation receipts automatically dispatched upon purchase.
 - **Database Seeder (`python manage.py seed_db`):** One-command database population with curated categories, products, reviews, coupons, and a demo account.
-- **100% Automated Test Suite:** 127 comprehensive unit, integration, and security tests covering authentication, registration, profile management, password recovery, product catalog, categories, gallery, shopping cart, atomic checkout, customer invoicing, security headers, file upload boundaries, open-redirect defenses, Stripe payments, coupons, reviews, wishlists, order cancellation, and emails.
+- **100% Automated Test Suite:** 133 comprehensive unit, integration, and security tests covering authentication, registration, profile management, password recovery, product catalog, categories, gallery, shopping cart, atomic checkout, customer invoicing, security headers, file upload boundaries, open-redirect defenses, Stripe payments, coupons, reviews, wishlists, order cancellation, and emails.
 - **GitOps & CI/CD Automation:** Robust multi-step GitHub Actions CI pipelines (Ruff linting & formatting, Python 3.12 Django testing with `uv` caching, and deployment security audits), automated `pip-audit` and secret scanning, pre-commit hooks, Conventional Commits, and SemVer changelog.
 
 ---
@@ -48,7 +46,7 @@ A production-grade, highly accessible, and visually stunning e-commerce web plat
 | **Configuration** | `django-environ` | `>= 0.14.0` | Twelve-factor configuration via `.env` |
 | **Image Processing**| `Pillow` | `>= 13.0.0` | Profile and product media processing |
 | **Database Driver** | `psycopg[binary]` | `>= 3.3.9` | High-efficiency PostgreSQL adapter |
-| **Payments** | `stripe` | `>= 11.0.0` | Payment gateway and webhook handling |
+| **Payments** | `stripe` | `>= 17.1.0` | Payment gateway and webhook handling |
 | **Linter / Formatter**| `Ruff` | `>= 0.17.5` | Fast Python linter & code formatter |
 | **Frontend Styling**| `Tailwind CSS v4` | `^4.0.0` | Utility CSS & token architecture via `@tailwindcss/cli` |
 
@@ -69,41 +67,43 @@ ecommerce/
 │   └── PULL_REQUEST_TEMPLATE.md# Pre-merge checklist & verification template
 ├── apps/
 │   ├── accounts/               # Custom user management & authentication app
-│   │   ├── migrations/         # Database migration files
-│   │   ├── admin.py            # CustomUser admin configuration
+│   │   ├── migrations/         # Database migration files (CustomUser & Address)
+│   │   ├── admin.py            # CustomUser & Address admin configuration
 │   │   ├── apps.py             # App configuration
 │   │   ├── backends.py         # EmailOrUsernameModelBackend (dual auth)
 │   │   ├── forms.py            # CustomLoginForm, CustomRegistrationForm, UserProfileForm, CustomPasswordResetForm, CustomSetPasswordForm
-│   │   ├── models.py           # CustomUser model (AbstractUser)
+│   │   ├── models.py           # CustomUser (AbstractUser) & Address models
 │   │   ├── tests.py            # Comprehensive 30-case accounts & auth test suite
 │   │   ├── tests_security.py   # Comprehensive 23-case automated security test suite
 │   │   ├── urls.py             # App URL patterns (login, logout, register, profile, password reset)
 │   │   └── views.py            # CustomLoginView, CustomLogoutView, RegisterView, ProfileView, HomeView, Password Reset Views
-│   ├── catalog/                # Product catalog & categories app
-│   │   ├── migrations/         # Category, Product, ProductImage migrations
+│   ├── catalog/                # Product catalog, reviews & wishlist app
+│   │   ├── management/         # Custom management commands (`seed_db`)
+│   │   ├── migrations/         # Category, Product, ProductImage, Review & Wishlist migrations
 │   │   ├── admin.py            # Admin configs with inlines & product counts
 │   │   ├── apps.py             # Catalog app configuration
-│   │   ├── models.py           # Category, Product, ProductImage models
-│   │   ├── tests.py            # Comprehensive 23-case test suite
-│   │   ├── urls.py             # Product list, category & detail routes
-│   │   └── views.py            # ProductListView, ProductDetailView
-│   ├── cart/                   # Session-backed shopping cart engine app
+│   │   ├── forms.py            # ReviewForm for customer product reviews
+│   │   ├── models.py           # Category, Product, ProductImage, Review & Wishlist models
+│   │   ├── tests.py            # Comprehensive 29-case test suite
+│   │   ├── urls.py             # Product list, category, detail, review & wishlist routes
+│   │   └── views.py            # ProductListView, ProductDetailView, review & wishlist views
+│   ├── cart/                   # Session-backed shopping cart & coupon engine app
 │   │   ├── apps.py             # Cart app configuration
-│   │   ├── cart.py             # Session engine managing item quantities & totals
+│   │   ├── cart.py             # Session engine managing item quantities, coupons & totals
 │   │   ├── context_processors.py # Global cart context processor
 │   │   ├── forms.py            # CartAddProductForm
-│   │   ├── tests.py            # Comprehensive 14-case test suite
-│   │   ├── urls.py             # Cart routes (detail, add, remove, update)
-│   │   └── views.py            # cart_detail, cart_add, cart_remove, cart_update_quantity
-│   └── orders/                 # Order management & checkout app
-│       ├── migrations/         # Order and OrderItem migrations
-│       ├── admin.py            # OrderAdmin with inline items and bulk actions
+│   │   ├── tests.py            # Comprehensive 23-case test suite
+│   │   ├── urls.py             # Cart & coupon routes (detail, add, remove, update, coupon apply/remove)
+│   │   └── views.py            # cart_detail, cart_add, cart_remove, cart_update_quantity, coupon views
+│   └── orders/                 # Order management, Stripe payments & checkout app
+│       ├── migrations/         # Order, OrderItem & Coupon migrations
+│       ├── admin.py            # OrderAdmin & CouponAdmin with inline items and bulk actions
 │       ├── apps.py             # Orders app configuration
-│       ├── forms.py            # OrderCreateForm
-│       ├── models.py           # Order and OrderItem models
-│       ├── tests.py            # Comprehensive 15-case test suite
-│       ├── urls.py             # Checkout, confirmation, list, invoice routes
-│       └── views.py            # order_create, order_created, order_list, order_detail
+│       ├── forms.py            # OrderCreateForm & CardPaymentForm
+│       ├── models.py           # Order, OrderItem & Coupon models
+│       ├── tests.py            # Comprehensive 28-case test suite
+│       ├── urls.py             # Checkout, Stripe payment, webhook, cancel, list & invoice routes
+│       └── views.py            # order_create, order_payment, stripe_webhook, order_cancel, order_created, order_list, order_detail
 ├── core/
 │   ├── asgi.py                 # ASGI configuration
 │   ├── middleware.py           # SecurityHeadersMiddleware (CSP, Referrer-Policy, Permissions-Policy)
@@ -112,7 +112,9 @@ ecommerce/
 │   └── wsgi.py                 # WSGI application entrypoint
 ├── static/
 │   ├── css/
-│   │   └── theme.css           # Design tokens, variables & full component styles
+│   │   ├── tailwind/input.css  # Tailwind CSS v4 @theme & layer configuration
+│   │   ├── app.css             # Compiled production CSS bundle
+│   │   └── theme.css           # Design tokens, variables & legacy component styles
 │   └── js/
 │       └── theme.js            # Theme toggle, password visibility, form spinners
 ├── templates/
@@ -128,26 +130,35 @@ ecommerce/
 │   │   └── password_reset_subject.txt   # Reset email subject line
 │   ├── catalog/
 │   │   ├── product_list.html   # Product catalog with search, filters & pagination
-│   │   └── product_detail.html # Rich product view with gallery & related products
+│   │   ├── product_detail.html # Rich product view with gallery, reviews & related products
+│   │   └── wishlist.html       # Customer saved items wishlist portal
 │   ├── cart/
-│   │   └── cart_detail.html    # Full cart breakdown, quantity controls & summary
+│   │   └── cart_detail.html    # Full cart breakdown, coupon redemption & summary
+│   ├── includes/
+│   │   └── product_card.html   # Unified Tailwind product card component
 │   ├── orders/
-│   │   ├── order_create.html   # Checkout form with sticky order breakdown
+│   │   ├── emails/
+│   │   │   ├── order_confirmation.html # HTML order receipt email
+│   │   │   └── order_confirmation.txt  # Plaintext order receipt email
+│   │   ├── order_create.html   # Checkout form with saved addresses & sticky order breakdown
+│   │   ├── order_payment.html  # Stripe card payment & sandbox test form
 │   │   ├── order_created.html  # Order confirmation & receipt summary
 │   │   ├── order_list.html     # My Orders customer portal with status filters
-│   │   └── order_detail.html   # Detailed print-ready invoice document
+│   │   └── order_detail.html   # Detailed print-ready invoice & order cancellation
 │   ├── base.html               # Master layout with zero-FOUC theme script & header
 │   └── home.html               # Dashboard & catalog showcase view
 ├── .env.example                # Template for environment configuration
 ├── .gitignore                  # Production Git ignore patterns
 ├── .pre-commit-config.yaml     # Git pre-commit hooks (Ruff, YAML, secrets)
+├── AGENTS.md                   # Workspace agent guidelines & mandatory update protocols
 ├── CHANGELOG.md                # SemVer release history following Keep a Changelog
 ├── CONTRIBUTING.md             # Developer guidelines, Conventional Commits & workflow
 ├── DESIGN_SYSTEM.md            # Single source of truth for UI/UX & typography standards
 ├── docker-compose.yaml         # PostgreSQL 18 container configuration
 ├── FEATURE.md                  # Chronological inventory of implemented features
-├── GEMINI.md                   # Workspace agent guidelines & mandatory update protocols
 ├── manage.py                   # Django CLI utility
+├── package.json                # Tailwind CSS v4 build scripts & devDependencies
+├── package-lock.json           # Locked npm dependencies
 ├── pyproject.toml              # Project dependencies & tool configurations
 ├── SECURITY.md                 # Vulnerability disclosure process & defense architecture
 └── uv.lock                     # Pinned deterministic dependency lockfile
@@ -192,6 +203,11 @@ DB_NAME=ecommerce.sqlite3
 # DB_PASSWORD=your_password
 # DB_HOST=localhost
 # DB_PORT=5432
+
+# Stripe Payment Gateway (sandbox test keys)
+STRIPE_PUBLISHABLE_KEY=pk_test_aurastore_mock_key
+STRIPE_SECRET_KEY=sk_test_aurastore_mock_key
+STRIPE_WEBHOOK_SECRET=
 ```
 
 ### 3. Install Dependencies
@@ -229,10 +245,15 @@ docker compose up -d
 #### Option B: SQLite (Quick Local Development)
 Set `DB_ENGINE=django.db.backends.sqlite3` in your `.env` file.
 
-### 5. Run Migrations & Create Superuser
+### 5. Run Migrations, Seed Sample Data & Create Superuser
 Apply migrations to initialize the database schema:
 ```bash
 uv run python manage.py migrate
+```
+
+Optionally populate curated categories, products, reviews, coupons (`WELCOME10`, `SAVE20`, `FLAT25`), and a demo customer account (`customer@aurastore.com` / `Password123!`):
+```bash
+uv run python manage.py seed_db
 ```
 
 Create a superuser to access the Django administration panel:
@@ -258,10 +279,10 @@ Visit `http://127.0.0.1:8000/` in your browser.
 ### Running Unit & Integration Tests
 Execute the comprehensive test suites:
 ```bash
-# Test the Shopping Cart and Orders & Checkout apps (29 test cases)
-$env:DB_ENGINE="django.db.backends.sqlite3"; $env:DB_NAME="test_db.sqlite3"; uv run python manage.py test apps.cart apps.orders
+# Test the Shopping Cart and Orders & Checkout apps (51 test cases)
+uv run python manage.py test apps.cart apps.orders
 
-# Test the Product Catalog app (23 test cases)
+# Test the Product Catalog app (29 test cases)
 uv run python manage.py test apps.catalog
 
 # Test the Accounts & Auth app (53 test cases including security suite)
@@ -270,10 +291,10 @@ uv run python manage.py test apps.accounts
 # Test the Security Hardening suite specifically (23 test cases)
 uv run python manage.py test apps.accounts.tests_security
 
-# Run all test suites across the project (105 test cases)
+# Run all test suites across the project (133 test cases)
 uv run python manage.py test
 ```
-*All 105 unit, integration, and security tests across accounts, auth, catalog, cart, orders, and defensive controls will execute.*
+*All 133 unit, integration, and security tests across accounts, auth, catalog, cart, orders, and defensive controls will execute.*
 
 ### Deployment Security Verification
 Check production deployment settings:
@@ -301,8 +322,8 @@ uv run pre-commit run --all-files
 
 ## 🤝 Contributing & Changelog
 
-- **[CONTRIBUTING.md](file:///c:/Users/seppe/Projects/ecommerce/CONTRIBUTING.md):** Guidelines on branch conventions, Conventional Commits standard (`feat:`, `fix:`, `docs:`, `chore:`), PR review workflows, and testing criteria.
-- **[CHANGELOG.md](file:///c:/Users/seppe/Projects/ecommerce/CHANGELOG.md):** Chronological milestone release notes adhering to Keep a Changelog and Semantic Versioning (v0.1.0, v0.2.0, and Unreleased).
+- **[CONTRIBUTING.md](CONTRIBUTING.md):** Guidelines on branch conventions, Conventional Commits standard (`feat:`, `fix:`, `docs:`, `chore:`), PR review workflows, and testing criteria.
+- **[CHANGELOG.md](CHANGELOG.md):** Chronological milestone release notes adhering to Keep a Changelog and Semantic Versioning (v0.1.0, v0.2.0, and Unreleased).
 - **Pull Request Template:** Standardized pre-merge verification checklist in `.github/PULL_REQUEST_TEMPLATE.md`.
 - **Issue Templates:** Feature requests and bug reports in `.github/ISSUE_TEMPLATE/`.
 
@@ -310,7 +331,7 @@ uv run pre-commit run --all-files
 
 ## 🎨 UI/UX Design System & Constitution
 
-All frontend templates and components strictly adhere to [DESIGN_SYSTEM.md](file:///c:/Users/seppe/Projects/ecommerce/DESIGN_SYSTEM.md).
+All frontend templates and components strictly adhere to [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
 
 - **Calm, Product-First Aesthetic:** Neutral-first UI chrome (warm off-white `#FAF9F6` in light mode; warm charcoal `#0F1012` in dark mode) letting product photography shine without loud startup gradients. Single accent per mode (deep teal `#2B5B5F` in light; muted amber `#D8A65A` in dark).
 - **Typography:** Refined editorial serif **Fraunces** for headlines and display alongside **Plus Jakarta Sans** for body and interface controls. Fluid scaling via CSS `clamp()` and tabular numerals for pricing.
@@ -322,6 +343,6 @@ All frontend templates and components strictly adhere to [DESIGN_SYSTEM.md](file
 
 ## 📜 Continuous Feature & Documentation Protocol
 
-This repository adheres to an autonomous documentation workflow enforced via [GEMINI.md](file:///c:/Users/seppe/Projects/ecommerce/GEMINI.md):
-- **Feature Tracking:** Every feature successfully implemented is immediately logged in [FEATURE.md](file:///c:/Users/seppe/Projects/ecommerce/FEATURE.md).
+This repository adheres to an autonomous documentation workflow enforced via [AGENTS.md](AGENTS.md):
+- **Feature Tracking:** Every feature successfully implemented is immediately logged in [FEATURE.md](FEATURE.md).
 - **README Updates:** Whenever a new feature alters setup instructions, endpoints, or platform capabilities, this `README.md` is updated automatically in the same turn without requiring explicit user instruction.

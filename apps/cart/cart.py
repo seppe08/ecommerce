@@ -21,12 +21,23 @@ class Cart:
             cart = self.session[CART_SESSION_ID] = {}
         self.cart = cart
         self.coupon_id = self.session.get(COUPON_SESSION_ID)
+        self._cached_coupon = None
+        self._coupon_loaded = False
 
     @property
     def coupon(self):
         """
-        Retrieve and validate currently applied coupon from session.
+        Retrieve and validate currently applied coupon from session (cached per request).
         """
+        if self._coupon_loaded:
+            if self._cached_coupon is not None:
+                valid, _ = self._cached_coupon.is_valid(self.get_total_price())
+                if valid:
+                    return self._cached_coupon
+                self.remove_coupon()
+            return None
+
+        self._coupon_loaded = True
         if self.coupon_id:
             from apps.orders.models import Coupon
 
@@ -34,6 +45,7 @@ class Cart:
                 coupon = Coupon.objects.get(id=self.coupon_id)
                 valid, _ = coupon.is_valid(self.get_total_price())
                 if valid:
+                    self._cached_coupon = coupon
                     return coupon
                 # Purge invalid/expired coupon
                 self.remove_coupon()
@@ -46,6 +58,8 @@ class Cart:
         Store coupon id in session and update instance.
         """
         self.coupon_id = coupon.id
+        self._cached_coupon = coupon
+        self._coupon_loaded = True
         self.session[COUPON_SESSION_ID] = coupon.id
         self.save()
 
@@ -54,6 +68,8 @@ class Cart:
         Remove coupon id from session and reset instance.
         """
         self.coupon_id = None
+        self._cached_coupon = None
+        self._coupon_loaded = True
         if COUPON_SESSION_ID in self.session:
             del self.session[COUPON_SESSION_ID]
             self.save()
@@ -164,6 +180,8 @@ class Cart:
         """
         self.cart = {}
         self.coupon_id = None
+        self._cached_coupon = None
+        self._coupon_loaded = True
         if CART_SESSION_ID in self.session:
             del self.session[CART_SESSION_ID]
         if COUPON_SESSION_ID in self.session:

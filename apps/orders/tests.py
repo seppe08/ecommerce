@@ -467,6 +467,11 @@ class OrderPaymentIntegrationTestCase(TestCase):
         )
 
     def test_stripe_webhook_successful_payment_intent(self):
+        import json
+
+        from django.core import mail
+        from django.test import override_settings
+
         payload = {
             "type": "payment_intent.succeeded",
             "data": {
@@ -476,18 +481,81 @@ class OrderPaymentIntegrationTestCase(TestCase):
                 }
             },
         }
-        import json
+        mail.outbox.clear()
+        with (
+            override_settings(STRIPE_WEBHOOK_SECRET="whsec_test_secret"),
+            patch("stripe.Webhook.construct_event", return_value=payload),
+        ):
+            response = self.client.post(
+                reverse("orders:stripe_webhook"),
+                data=json.dumps(payload),
+                content_type="application/json",
+                HTTP_STRIPE_SIGNATURE="t=1,v1=sig",
+            )
+            self.assertEqual(response.status_code, 200)
+            # Duplicate webhook delivery should be idempotent (no duplicate email)
+            response_dup = self.client.post(
+                reverse("orders:stripe_webhook"),
+                data=json.dumps(payload),
+                content_type="application/json",
+                HTTP_STRIPE_SIGNATURE="t=1,v1=sig",
+            )
+            self.assertEqual(response_dup.status_code, 200)
 
-        response = self.client.post(
-            reverse("orders:stripe_webhook"),
-            data=json.dumps(payload),
-            content_type="application/json",
-        )
-        self.assertEqual(response.status_code, 200)
         self.order.refresh_from_db()
         self.assertTrue(self.order.paid)
         self.assertEqual(self.order.status, Order.STATUS_PAID)
         self.assertEqual(self.order.stripe_payment_intent_id, "pi_webhook_test_999")
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_stripe_webhook_rejects_missing_secret(self):
+        import json
+
+        from django.test import override_settings
+
+        payload = {
+            "type": "payment_intent.succeeded",
+            "data": {
+                "object": {
+                    "id": "pi_forged",
+                    "metadata": {"order_number": self.order.order_number},
+                }
+            },
+        }
+        with override_settings(STRIPE_WEBHOOK_SECRET=""):
+            response = self.client.post(
+                reverse("orders:stripe_webhook"),
+                data=json.dumps(payload),
+                content_type="application/json",
+            )
+        self.assertEqual(response.status_code, 400)
+        self.order.refresh_from_db()
+        self.assertFalse(self.order.paid)
+
+    def test_card_payment_form_rejects_invalid_or_expired_expiry(self):
+        from .forms import CardPaymentForm
+
+        bad_form = CardPaymentForm(
+            data={
+                "cardholder_name": "Shopper One",
+                "card_number": "4242424242424242",
+                "expiry": "not-a-date",
+                "cvc": "123",
+            }
+        )
+        self.assertFalse(bad_form.is_valid())
+        self.assertIn("expiry", bad_form.errors)
+
+        expired_form = CardPaymentForm(
+            data={
+                "cardholder_name": "Shopper One",
+                "card_number": "4242424242424242",
+                "expiry": "01/20",
+                "cvc": "123",
+            }
+        )
+        self.assertFalse(expired_form.is_valid())
+        self.assertIn("expiry", expired_form.errors)
 
 
 class OrderFulfillmentAndAddressTestCase(TestCase):
@@ -642,3 +710,91 @@ class OrderFulfillmentAndAddressTestCase(TestCase):
         addr = Address.objects.filter(user=self.user, address="500 Mountain Rd").first()
         self.assertIsNotNone(addr)
         self.assertEqual(addr.city, "Boulder")
+
+    def test_order_cancel_restores_coupon_usage(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from .models import Coupon
+
+        coupon = Coupon.objects.create(
+            code="ONCE",
+            discount_type=Coupon.DISCOUNT_TYPE_FIXED,
+            discount_value=Decimal("10.00"),
+            valid_from=timezone.now() - timedelta(days=1),
+            valid_to=timezone.now() + timedelta(days=5),
+            usage_limit=1,
+            times_used=1,
+        )
+        self.order.coupon = coupon
+        self.order.discount = Decimal("10.00")
+        self.order.save()
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "orders:order_cancel", kwargs={"order_number": self.order.order_number}
+            ),
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        coupon.refresh_from_db()
+        self.assertEqual(coupon.times_used, 0)
+
+    def test_multiple_guest_orders_remain_accessible_in_session(self):
+        from apps.cart.cart import CART_SESSION_ID
+
+        form_data = {
+            "first_name": "Guest",
+            "last_name": "Shopper",
+            "email": "guest@example.com",
+            "address": "123 Guest St",
+            "city": "Austin",
+            "postal_code": "78701",
+            "country": "United States",
+            "payment_method": "cod",
+        }
+        orders_placed = []
+        for _ in range(2):
+            session = self.client.session
+            session[CART_SESSION_ID] = {
+                str(self.product.id): {"quantity": 1, "price": "110.00"}
+            }
+            session.save()
+            resp = self.client.post(reverse("orders:order_create"), form_data)
+            self.assertEqual(resp.status_code, 302)
+            orders_placed.append(Order.objects.order_by("-id").first())
+
+        # Both first and second guest orders must remain accessible
+        for guest_order in orders_placed:
+            detail_resp = self.client.get(
+                reverse(
+                    "orders:order_detail",
+                    kwargs={"order_number": guest_order.order_number},
+                )
+            )
+            self.assertEqual(detail_resp.status_code, 200)
+
+    def test_order_create_rollback_preserves_cart(self):
+        from apps.cart.cart import CART_SESSION_ID
+
+        session = self.client.session
+        session[CART_SESSION_ID] = {
+            str(self.product.id): {"quantity": 99, "price": "110.00"}
+        }
+        session.save()
+
+        form_data = {
+            "first_name": "Buyer",
+            "last_name": "One",
+            "email": "buyer1@example.com",
+            "address": "100 Trail Way",
+            "city": "Denver",
+            "postal_code": "80201",
+            "country": "United States",
+            "payment_method": "cod",
+        }
+        response = self.client.post(reverse("orders:order_create"), form_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(CART_SESSION_ID, self.client.session)

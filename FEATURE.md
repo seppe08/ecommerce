@@ -529,7 +529,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 16. Comprehensive Dark & Light Theme Contrast & Cross-Theme Legibility Fixes
+### 22. Comprehensive Dark & Light Theme Contrast & Cross-Theme Legibility Fixes
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -552,7 +552,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 17. Tailwind CSS v4 Build Pipeline & Unified Product Card Component (Proof of Concept)
+### 23. Tailwind CSS v4 Build Pipeline & Unified Product Card Component (Proof of Concept)
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -593,7 +593,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 18. Stripe & Card Payment Gateway Integration
+### 24. Stripe & Card Payment Gateway Integration
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -619,7 +619,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 19. Promotions & Coupon Discount System
+### 25. Promotions & Coupon Discount System
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -644,7 +644,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 20. Customer Product Reviews & Star Ratings
+### 26. Customer Product Reviews & Star Ratings
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -666,7 +666,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 21. Customer Wishlist & Saved Items System
+### 27. Customer Wishlist & Saved Items System
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -688,7 +688,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 22. Saved Customer Address Book & Checkout Auto-Fill
+### 28. Saved Customer Address Book & Checkout Auto-Fill
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -707,7 +707,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 23. Order Cancellation with Atomic Inventory Replenishment
+### 29. Order Cancellation with Atomic Inventory Replenishment
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -724,7 +724,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 24. Transactional Order Confirmation Receipt Emails
+### 30. Transactional Order Confirmation Receipt Emails
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -740,7 +740,7 @@ Whenever a feature, module, or enhancement is successfully implemented:
 
 ---
 
-### 25. Database Seeding Command (`python manage.py seed_db`)
+### 31. Database Seeding Command (`python manage.py seed_db`)
 - **Status:** Completed
 - **Date:** November 2026
 - **Description:**
@@ -750,6 +750,24 @@ Whenever a feature, module, or enhancement is successfully implemented:
   - `apps/catalog/management/commands/seed_db.py`
 - **Verification:**
   - Executed `uv run python manage.py seed_db` successfully initializing sample catalog and demo account.
+
+---
+
+### 32. Security, Concurrency & Query Hardening Audit Fixes
+- **Status:** Completed
+- **Date:** November 2026
+- **Description:**
+  - **Stripe Webhook & PCI Hardening (`apps/orders/views.py`, `apps/orders/forms.py`):** Enforced mandatory `STRIPE_WEBHOOK_SECRET` signature verification (rejecting unsigned webhooks with `400`), added idempotency (`if not order.paid:`) and email dispatch on webhook fulfillment, switched real-key Stripe payments to PCI-compliant `stripe.checkout.Session.create()` redirects, and added `CardPaymentForm.clean_expiry()` date validation and `OrderCreateForm.clean_payment_method()` fallback.
+  - **Concurrency & Transaction Boundaries (`apps/orders/views.py`, `apps/orders/models.py`):** Locked `Coupon` rows with `select_for_update()` during `order_create` and restored `times_used` on `order_cancel`; moved `cart.clear()`, guest session tracking (`guest_order_ids` list supporting multiple guest orders), and email dispatch outside `transaction.atomic()`; enforced `is_active=True` during checkout; changed `OrderItem.product` `on_delete` from `CASCADE` to `PROTECT` (`0004_orderitem_protect_product.py`).
+  - **Cart & Catalog Optimization (`apps/cart/cart.py`, `apps/cart/views.py`, `apps/catalog/models.py`):** Cached `Cart.coupon` per request, added 400/error handling for invalid `cart_add` submissions, and eliminated N+1 queries in `Product.average_rating` and `Product.get_rating_distribution()` using `Avg`/`Count` aggregation.
+  - **Email Configuration (`core/settings.py`, `.env.example`):** Explicitly configured `DEFAULT_FROM_EMAIL`.
+- **Key Files:**
+  - `apps/orders/views.py`, `apps/orders/forms.py`, `apps/orders/models.py`, `apps/orders/migrations/0004_orderitem_protect_product.py`, `apps/orders/tests.py`
+  - `apps/cart/cart.py`, `apps/cart/views.py`, `apps/cart/tests.py`
+  - `apps/catalog/models.py`, `apps/catalog/tests.py`
+  - `core/settings.py`, `.env.example`
+- **Verification:**
+  - `uv run python manage.py test` passed 133/133 tests; `uv run ruff check .` and `uv run ruff format --check .` passed cleanly.
 
 ---
 

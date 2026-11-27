@@ -503,6 +503,10 @@ class ReviewAndRatingTestCase(TestCase):
         self.assertEqual(dist[4]["count"], 1)
         self.assertEqual(dist[3]["count"], 0)
 
+        with self.assertNumQueries(1):
+            dist_optimized = self.product.get_rating_distribution()
+        self.assertEqual(dist_optimized[5]["count"], 1)
+
     def test_add_review_authenticated(self):
         self.client.force_login(self.user1)
         review_data = {

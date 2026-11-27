@@ -35,6 +35,28 @@ jobs:
       - name: Run Ruff Linting
         run: uv run ruff check .
 
+      - name: Run Ruff Format Check
+        run: uv run ruff format --check .
+
+  css:
+    name: Tailwind CSS Bundle Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install frontend dependencies & build CSS
+        run: npm ci && npm run build:css
+
+      - name: Verify compiled CSS is committed
+        run: git diff --exit-code static/css/app.css
+
   test:
     name: Test Suite & Deployment Check (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -46,6 +68,7 @@ jobs:
     env:
       SECRET_KEY: "ci-insecure-test-key-strictly-for-automated-github-actions-testing"
       DEBUG: "False"
+      SECURE_SSL_REDIRECT: "True"
       DB_ENGINE: "django.db.backends.sqlite3"
       DB_NAME: "ci_test_db"
       ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
@@ -65,8 +88,11 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Check for missing Django migrations
+        run: uv run python manage.py makemigrations --check --dry-run
+
       - name: Run Django Deployment Security Check
         run: uv run python manage.py check --deploy
 
       - name: Run Django Test Suite
-        run: uv run python manage.py test
+        run: uv run python manage.py test --verbosity=2

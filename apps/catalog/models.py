@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import Avg, Count
 from django.urls import reverse
 
 
@@ -68,28 +69,27 @@ class Product(models.Model):
 
     @property
     def average_rating(self):
-        reviews = self.reviews.all()
-        if not reviews.exists():
-            return 0.0
-        return round(sum(r.rating for r in reviews) / reviews.count(), 1)
+        avg = self.reviews.aggregate(avg=Avg("rating"))["avg"]
+        return round(avg, 1) if avg is not None else 0.0
 
     @property
     def review_count(self):
         return self.reviews.count()
 
     def get_rating_distribution(self):
-        """Return percentage and count for each rating 1-5."""
-        total = self.review_count
+        """Return percentage and count for each rating 1-5 in a single query."""
+        rows = self.reviews.values("rating").annotate(count=Count("id"))
+        counts = {row["rating"]: row["count"] for row in rows}
+        total = sum(counts.values())
         if total == 0:
             return {star: {"count": 0, "pct": 0} for star in range(5, 0, -1)}
-        dist = {}
-        for star in range(5, 0, -1):
-            count = self.reviews.filter(rating=star).count()
-            dist[star] = {
-                "count": count,
-                "pct": round((count / total) * 100),
+        return {
+            star: {
+                "count": counts.get(star, 0),
+                "pct": round((counts.get(star, 0) / total) * 100),
             }
-        return dist
+            for star in range(5, 0, -1)
+        }
 
 
 class ProductImage(models.Model):

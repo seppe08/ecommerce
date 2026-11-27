@@ -10,38 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stripe & Card Payment Gateway Integration:**
+  - Integrated Stripe payment processing alongside Cash on Delivery (COD) checkout selection (`payment_method`, `stripe_payment_intent_id`, `Order.mark_as_paid()`).
+  - Added `/orders/payment/<order_number>/` payment portal with sandbox test card support, decline simulation, COD switching, and `/orders/webhook/stripe/` webhook handler.
+- **Promotions & Coupon Discount System:**
+  - Added `Coupon` model supporting percentage and fixed-amount discounts, validity windows, usage caps, and minimum order spend.
+  - Integrated coupon redemption (`/cart/coupon/apply/`, `/cart/coupon/remove/`) into session-backed `Cart` and `Order` records.
+- **Customer Product Reviews & Star Ratings:**
+  - Added `Review` model (1–5 stars, headline, text, unique per user/product) with automated verified-buyer badges and dynamic `average_rating`, `review_count`, and `rating_distribution` metrics.
+- **Customer Wishlist & Saved Items:**
+  - Added `Wishlist` model, `/products/wishlist/` portal, and AJAX heart toggle on product cards and detail pages.
+- **Saved Customer Address Book:**
+  - Added `Address` model in `apps/accounts` with default shipping address auto-fill and 1-click address selector chips during checkout.
+- **Order Cancellation & Inventory Replenishment:**
+  - Added `/orders/cancel/<order_number>/` endpoint with `transaction.atomic()` and `select_for_update()` stock restoration for pending orders.
+- **Transactional Order Confirmation Emails:**
+  - Added itemized HTML and plaintext order confirmation emails (`templates/orders/emails/order_confirmation.*`) dispatched via `EmailMultiAlternatives`.
+- **Database Seeding Command (`seed_db`):**
+  - Added `uv run python manage.py seed_db` management command populating sample categories, products, reviews, coupons (`WELCOME10`, `SAVE20`, `FLAT25`), and a demo customer account.
 - **Tailwind CSS v4 Build Pipeline (Option A — Server-Rendered Django Proof of Concept):**
   - Integrated `@tailwindcss/cli` v4 and `tailwindcss` with `package.json` scripts (`build:css` and `watch:css`).
   - Added single source of truth token mapping in `static/css/tailwind/input.css` using `@theme` referencing existing CSS variables (`--color-page`, `--color-surface`, `--color-subtle`, `--color-ink`, `--color-ink-2`, `--color-ink-3`, `--color-line`, `--color-line-strong`, `--color-accent`, `--color-accent-hover`, `--color-accent-fg`, `--color-success*`, `--color-warning*`, `--color-error*`, `--radius-card`, `--radius-control`, `--font-body`, `--font-editorial`).
   - Compiled and committed static bundle `static/css/app.css` to allow zero-Node Python-only deployment pipelines.
   - Created unified, reusable product card template `templates/includes/product_card.html` with 4:5 media aspect ratio, 500ms secondary image hover crossfade, restrained semantic stock badges, desktop hover/focus and touch-persistent quick-add button, clamped description, tabular price, and 44px touch target secondary "View Details" button.
-
-### Changed
-- **CSS Layer Hierarchy Architecture:** Declared `@layer theme, legacy, components, utilities;` in `input.css` and encapsulated entire legacy `theme.css` in `@layer legacy { ... }` preserving CRLF line endings, allowing Tailwind utilities in `@layer utilities` to override legacy styling without `!important`.
-- **Design Token & Accessibility Contrast Refinements:**
-  - Upgraded `--text-muted` from `#888F9E` (~3.1:1) to `#646B7A` (~4.8:1/5.1:1) in Light mode and `#8E95A2` (~5.7:1) in Dark mode, ensuring full WCAG 2.1 AA compliance for body and meta text across both themes.
-  - Scoped legacy CSS rules: declared legacy custom classes frozen in favor of Tailwind utility classes.
-- **Header "Sign In" Button:** Restyled `.header-signin-btn` using Tailwind utilities (`h-10 px-4 text-sm font-medium rounded-control border border-line-strong bg-surface text-ink hover:bg-subtle transition-colors shrink-0 whitespace-nowrap w-auto`) while preserving required classes and accessible label.
-- **Unified Product Card Adoption:** Replaced duplicated card markup across `templates/catalog/product_list.html`, `templates/home.html`, and `templates/catalog/product_detail.html` with `templates/includes/product_card.html`.
-
-### Removed
-- **Primary Gradient:** Completely removed `--primary-gradient` token from `:root` and `[data-theme="dark"]`, converting `.auth-showcase` to solid Deep Teal to strictly adhere to design system prohibitions on gradients.
-- **Dead Legacy Product Card CSS:** Deleted legacy `.product-card*`, `.quick-add*`, `.product-card-desc/meta/actions`, and mobile/touch card overrides from `static/css/theme.css`.
-- **UI/UX Redesign — Calm, Editorial, Product-First Storefront (Phases 1, 2 & 3):**
-  - **Calm Neutral-First Color Palette:** Redesigned light theme to warm off-white (`#FAF9F6`), crisp white surfaces (`#FFFFFF`), neutral text (`#16181D`), and single deep teal accent (`#2B5B5F`, hover `#224A4D`). Redesigned dark theme to warm charcoal (`#0F1012`), elevated surfaces (`#16181C`, `#1D2025`), and muted amber accent (`#D8A65A`). Removed loud violet gradients from buttons and branding.
-  - **Fluid Typography Hierarchy:** Integrated Google Fonts `Fraunces` editorial serif for display and section headings alongside `Plus Jakarta Sans` for body/UI controls with fluid `clamp()` type scaling. Added tabular numerals for price display and 65ch max-line-length constraints.
-  - **Global Header & Navigation:** Introduced slimmer header with hairline scroll border, responsive search bar (inline desktop, expandable mobile overlay), theme toggle with 44×44px touch target, shopping cart count bump animation, and clean typography.
-  - **Multi-Column Application Footer:** Replaced single-line copyright with a 4-column responsive footer (Brand mission, Collections, Customer Care, Member Accounts).
-  - **Editorial Home Page:** Replaced startup-style cards with a calm editorial hero, curated "Featured Objects" grid with 4:5 image ratio, secondary gallery image hover crossfade, and AJAX quick-add button, followed by category tiles with real images and zero fabricated reviews.
-  - **Product Catalog Showcase (Phase 2):** Overhauled `product_list.html` with breadcrumb navigation, search/sort toolbar, horizontally scrollable category chips with scroll-snap on mobile, responsive 4:5 image grid (2 col mobile, 3 col tablet, 4 col desktop), secondary image hover crossfade, quick-add buttons, and styled zero-result empty state.
-  - **Product Detail Experience (Phase 2):** Overhauled `product_detail.html` with desktop sticky gallery, pure CSS click-to-zoom (`scale(1.6)` with smooth transition, no CDN library), interactive thumbnail switcher, sticky buy box with quantity stepper, single dominant CTA, reassuring microcopy, accessible 3-tab specifications panel, and related products rail.
-  - **Shopping Cart & Checkout Flow (Phase 3):** Enhanced `cart_detail.html` and `order_create.html` with a clear 3-step progress stepper (`Cart → Checkout → Confirmation`), responsive 2-column layout with sticky summary on desktop, and a mobile-collapsible order summary with smooth toggle on screens ≤ 960px.
-  - **Customer Portal & Printable Invoices (Phase 3):** Refined `order_list.html`, `order_created.html`, and `order_detail.html` with calm editorial headers, status badges, and an updated print stylesheet (`@media print`) rendering clean `#000000` text with zero background fills and hidden chrome.
-  - **Authentication & Account Views (Phase 3):** Refined `login.html`, `register.html`, `profile.html`, and all four password reset step templates (`password_reset_form.html`, `password_reset_done.html`, `password_reset_confirm.html`, `password_reset_complete.html`). Fully eliminated all inline `style="..."` attributes across all templates in the repository, replacing them with semantic CSS classes while strictly preserving all test assertions and element IDs.
-  - **Design System Clean-up:** Added `.u-sr-only` definition, eliminated hard-coded hex colors in dropdowns using tokenized SVGs, deduplicated `.form-grid-2`, and defined missing utility classes (`btn-lg`, `btn-outline`, `badge-primary`, `badge-error`, `text-primary`, `text-success`, `form-helper`, `optional-mark`, `invoice-actions`, `badge-info`, `auth-callout-box`, `status-icon-centered`, `summary-mobile-toggle`).
-  - **High-Contrast Dark & Light Mode Harmonization:** Resolved critical legibility bugs across authentication pages and UI controls. Eliminated invisible text in `.auth-showcase` by replacing undefined gradients and inverted text tokens with explicit high-contrast palettes (Deep Teal with crisp white text in Light mode; elevated charcoal `#1D2025` with `#F2F0EB` text and muted amber `#D8A65A` in Dark mode). Added universal button resets eliminating default browser `buttonface` borders on `.password-toggle-btn` and header toggles. Enforced desktop hiding of mobile search toggle. Defined missing `--font-display`, `--primary-contrast`, and `--primary-gradient` design tokens across `:root` and dark theme. Upgraded `.form-label` contrast across all forms.
-
-### Added
 - **GitOps Automation & Pre-commit Hooks:**
   - Added `.pre-commit-config.yaml` configured with Astral Ruff (lint and format), `check-yaml`, `end-of-file-fixer`, `trailing-whitespace`, `check-merge-conflict`, and `detect-private-key`.
 - **CI/CD GitHub Actions Workflows:**
@@ -49,22 +40,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `.github/workflows/security.yml`: Automated security audit workflow running `pip-audit` for dependency vulnerability scanning and TruffleHog for secret scanning.
 - **Developer Workflow & Templates:**
   - Added `.github/PULL_REQUEST_TEMPLATE.md` with comprehensive pre-merge checklist, change summary, and verification evidence sections.
-  - Added `.github/ISSUE_TEMPLATE/feature_request.md` for structured feature proposals and design system alignment.
-  - Added `.github/ISSUE_TEMPLATE/bug_report.md` for reproducible defect reporting across environments.
-- **Contribution & Git Guidelines:**
-  - Added `CONTRIBUTING.md` outlining the Conventional Commits standard (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `chore:`), Git branch naming (`feature/*`, `fix/*`, `chore/*`), local setup with `uv`, pre-commit verification, and PR review workflow.
-- **Security Hardening (In Progress):**
-  - Production-ready security headers (HSTS, SSL redirect, secure session and CSRF cookies, X-Frame-Options, Content-Security-Policy).
+  - Added `.github/ISSUE_TEMPLATE/feature_request.md` and `.github/ISSUE_TEMPLATE/bug_report.md`.
+  - Added `CONTRIBUTING.md` outlining Conventional Commits, branch naming, local setup, pre-commit verification, and PR review workflow.
+- **Security Hardening:**
+  - Production-ready security headers (`SecurityHeadersMiddleware`: CSP, Referrer-Policy, Permissions-Policy), HSTS, SSL redirect, secure session/CSRF cookies, and `X_FRAME_OPTIONS = 'DENY'`.
   - Profile avatar upload sanitization, format verification with PIL, and 5MB size limit.
 
+### Changed
+- **CSS Layer Hierarchy Architecture:** Declared `@layer theme, legacy, components, utilities;` in `input.css` and encapsulated entire legacy `theme.css` in `@layer legacy { ... }` preserving CRLF line endings, allowing Tailwind utilities in `@layer utilities` to override legacy styling without `!important`.
+- **Design Token & Accessibility Contrast Refinements:**
+  - Upgraded `--text-muted` from `#888F9E` (~3.1:1) to `#646B7A` (~4.8:1/5.1:1) in Light mode and `#8E95A2` (~5.7:1) in Dark mode, ensuring full WCAG 2.1 AA compliance for body and meta text across both themes.
+  - Scoped legacy CSS rules: declared legacy custom classes frozen in favor of Tailwind utility classes.
+- **Header "Sign In" Button:** Restyled `.header-signin-btn` using Tailwind utilities while preserving required classes and accessible label.
+- **Unified Product Card Adoption:** Replaced duplicated card markup across `templates/catalog/product_list.html`, `templates/home.html`, and `templates/catalog/product_detail.html` with `templates/includes/product_card.html`.
+- **UI/UX Redesign — Calm, Editorial, Product-First Storefront (Phases 1, 2 & 3):**
+  - Redesigned light (`#FAF9F6` / `#2B5B5F`) and dark (`#0F1012` / `#D8A65A`) palettes, fluid `Fraunces` + `Plus Jakarta Sans` typography, global header & 4-column footer, editorial home page, catalog showcase, product detail click-to-zoom gallery, 3-step checkout stepper, printable invoices, and inline-style-free auth views.
+  - Resolved dark/light contrast issues in `.auth-showcase`, button resets, mobile/desktop search toggle visibility, and form labels.
+
+### Removed
+- **Primary Gradient:** Completely removed `--primary-gradient` token from `:root` and `[data-theme="dark"]`, converting `.auth-showcase` to solid Deep Teal to strictly adhere to design system prohibitions on gradients.
+- **Dead Legacy Product Card CSS:** Deleted legacy `.product-card*`, `.quick-add*`, `.product-card-desc/meta/actions`, and mobile/touch card overrides from `static/css/theme.css`.
+
 ### Fixed
+- **Stripe Webhook & PCI Hardening:** Enforced `STRIPE_WEBHOOK_SECRET` signature verification (rejecting unsigned requests with `400`), added webhook idempotency, switched real-key Stripe payments to Stripe Checkout Sessions, and added expiry validation on `CardPaymentForm`.
+- **Checkout Concurrency & Data Integrity:** Locked `Coupon` rows with `select_for_update()` during checkout, restored coupon `times_used` on order cancellation, moved session clearing and email dispatch outside `transaction.atomic()`, preserved multiple guest orders in session (`guest_order_ids`), enforced `is_active=True` on checkout products, and changed `OrderItem.product` `on_delete` to `PROTECT`.
+- **Cart & Catalog Performance:** Cached `Cart.coupon` per request, returned `400` JSON / error feedback on invalid `cart_add` submissions, and eliminated N+1 queries in `Product.average_rating` and `Product.get_rating_distribution()`.
 - **CI Linting Compatibility:**
   - Removed redundant `#!/usr/bin/env python` shebang line from `manage.py` resolving Ruff `EXE001` (shebang on non-executable file) failure on Unix-based GitHub Actions runners.
-
-### Planned
-- Shopping Cart with persistent session storage and line item management.
-- Multi-step checkout pipeline with address capture and order placement.
-- Stripe payment gateway integration with webhook event handling.
 
 ---
 

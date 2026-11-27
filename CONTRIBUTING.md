@@ -24,8 +24,8 @@ AuraStore requires **Python 3.12+** and uses **[uv](https://github.com/astral-sh
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-org/aurastore.git
-cd aurastore
+git clone https://github.com/seppe08/ecommerce.git
+cd ecommerce
 ```
 
 ### 2. Configure Environment Variables
@@ -35,14 +35,17 @@ cp .env.example .env
 ```
 *(On Windows PowerShell: `Copy-Item .env.example .env`)*
 
-### 3. Install Dependencies with `uv`
+### 3. Install Dependencies with `uv` & `npm`
 ```bash
 uv sync
+npm install
+npm run build:css
 ```
 
-### 4. Apply Database Migrations
+### 4. Apply Database Migrations & Seed Sample Data (Optional)
 ```bash
 uv run python manage.py migrate
+uv run python manage.py seed_db
 ```
 
 ### 5. Install Pre-commit Hooks
@@ -173,7 +176,7 @@ uv run python manage.py check --deploy
 
 Every frontend contribution must strictly comply with **`DESIGN_SYSTEM.md`**:
 
-1. **Light & Dark Mode Support:** Every component, card, button, and input must render cleanly in both light and dark themes using CSS variables from `theme.css`.
+1. **Light & Dark Mode Support:** Every component, card, button, and input must render cleanly in both light and dark themes using Tailwind CSS v4 tokens (`static/css/tailwind/input.css` compiled to `static/css/app.css`) and CSS custom properties from `theme.css`.
 2. **Zero-FOUC:** Ensure theme resolution script remains blocking in `<head>` so no unstyled flash occurs on page load.
 3. **WCAG 2.1 AA Compliance:**
    - Interactive elements (buttons, inputs, links, chips) must have minimum touch targets of **44×44px**.

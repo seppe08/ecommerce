@@ -404,3 +404,12 @@ class CouponIntegrationTestCase(TestCase):
 
         self.coupon_percent.refresh_from_db()
         self.assertEqual(self.coupon_percent.times_used, 1)
+
+    def test_cart_add_invalid_quantity_returns_error(self):
+        response = self.client.post(
+            reverse("cart:cart_add", kwargs={"product_id": self.product.id}),
+            {"quantity": 0},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])

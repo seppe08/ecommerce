@@ -180,6 +180,11 @@ def cart_add(request, product_id):
                     "cart_total": f"{cart.get_total_price():.2f}",
                 }
             )
+    else:
+        error_msg = "Please enter a valid quantity."
+        if is_ajax(request):
+            return JsonResponse({"success": False, "message": error_msg}, status=400)
+        messages.error(request, error_msg)
 
     return redirect(request.POST.get("next") or "cart:cart_detail")
 

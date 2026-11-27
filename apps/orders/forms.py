@@ -1,3 +1,6 @@
+import re
+from datetime import date
+
 from django import forms
 
 from .models import Order
@@ -134,6 +137,9 @@ class OrderCreateForm(forms.ModelForm):
             "payment_method",
         )
 
+    def clean_payment_method(self):
+        return self.cleaned_data.get("payment_method") or "stripe"
+
 
 class CardPaymentForm(forms.Form):
     """
@@ -199,6 +205,19 @@ class CardPaymentForm(forms.Form):
                 "Please enter a valid card number (13-19 digits)."
             )
         return number
+
+    def clean_expiry(self):
+        expiry = self.cleaned_data["expiry"].strip()
+        match = re.fullmatch(r"(0[1-9]|1[0-2])\s*/\s*(\d{2}|\d{4})", expiry)
+        if not match:
+            raise forms.ValidationError("Enter a valid expiry date in MM/YY format.")
+        month = int(match.group(1))
+        year_raw = match.group(2)
+        year = int(year_raw) if len(year_raw) == 4 else 2000 + int(year_raw)
+        today = date.today()
+        if (year, month) < (today.year, today.month):
+            raise forms.ValidationError("This card has expired.")
+        return f"{month:02d}/{year % 100:02d}"
 
     def clean_cvc(self):
         cvc = self.cleaned_data["cvc"].strip()
